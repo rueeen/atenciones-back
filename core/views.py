@@ -1,3 +1,13 @@
+from .serializers import AtencionTrasladoSerializer
+from .models import Atencion, HistorialCambios, Usuario
+from .serializers import UsuarioSerializer
+from .models import Usuario
+from .serializers import HistorialCambiosSerializer
+from .models import HistorialCambios
+from django.contrib.auth import get_user_model
+from .models import Atencion, HistorialCambios
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import generics, status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
@@ -173,3 +183,53 @@ class CarreraListView(ListAPIView):
         if search:
             queryset = queryset.filter(nombre__icontains=search)
         return queryset
+
+
+class TrasladarAtencionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        atencion = get_object_or_404(Atencion, pk=pk)
+        serializer = AtencionTrasladoSerializer(
+            instance=atencion, data=request.data)
+
+        if serializer.is_valid():
+            nuevo_usuario = serializer.validated_data["usuario"]
+
+            # Validar perfil
+            if nuevo_usuario.perfil != "funcionario":
+                return Response(
+                    {"error": "Solo se puede trasladar a usuarios con perfil funcionario."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+            serializer.save()  # Guarda el nuevo usuario asignado
+
+            HistorialCambios.objects.create(
+                atencion=atencion,
+                usuario=request.user,
+                descripcion=f"Atención trasladada a {nuevo_usuario.get_full_name() or nuevo_usuario.username}"
+            )
+
+            return Response({"mensaje": "Atención trasladada correctamente."}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HistorialAtencionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, atencion_id):
+        historial = HistorialCambios.objects.filter(
+            atencion_id=atencion_id).order_by('-fecha')
+        serializer = HistorialCambiosSerializer(historial, many=True)
+        return Response(serializer.data)
+
+
+class ListaUsuariosView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        usuarios = Usuario.objects.all()
+        serializer = UsuarioSerializer(usuarios, many=True)
+        return Response(serializer.data)

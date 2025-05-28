@@ -10,18 +10,22 @@ class UsuarioSerializer(serializers.ModelSerializer):
 
 
 class EstudianteSerializer(serializers.ModelSerializer):
-    carrera = serializers.StringRelatedField()  # o CarreraSerializer() si quieres más detalle
+    # o CarreraSerializer() si quieres más detalle
+    carrera = serializers.StringRelatedField()
 
     class Meta:
         model = Estudiante
         fields = ['id', 'rut', 'nombre', 'correo', 'carrera']
-        
+
+
 class EstudianteCreateUpdateSerializer(serializers.ModelSerializer):
-    carrera = serializers.PrimaryKeyRelatedField(queryset=Carrera.objects.all())
+    carrera = serializers.PrimaryKeyRelatedField(
+        queryset=Carrera.objects.all())
 
     class Meta:
         model = Estudiante
         fields = ['id', 'rut', 'nombre', 'correo', 'carrera']
+
 
 class CategoriaAtencionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -41,10 +45,18 @@ class DocumentoAdjuntoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# core/serializers.py
 class HistorialCambiosSerializer(serializers.ModelSerializer):
+    usuario_nombre = serializers.SerializerMethodField()
+
     class Meta:
         model = HistorialCambios
-        fields = '__all__'
+        fields = ['id', 'fecha', 'descripcion', 'usuario_nombre']
+
+    def get_usuario_nombre(self, obj):
+        if obj.usuario:
+            return f"{obj.usuario.first_name} {obj.usuario.last_name}".strip() or obj.usuario.username
+        return None
 
 
 class AtencionSerializer(serializers.ModelSerializer):
@@ -60,6 +72,15 @@ class AreaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Area
         fields = '__all__'
+
+
+class AtencionTrasladoSerializer(serializers.ModelSerializer):
+    usuario = serializers.PrimaryKeyRelatedField(
+        queryset=Usuario.objects.all())
+
+    class Meta:
+        model = Atencion
+        fields = ['usuario']
 
 
 class CarreraSerializer(serializers.ModelSerializer):
