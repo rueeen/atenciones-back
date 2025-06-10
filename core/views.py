@@ -1,4 +1,3 @@
-from .serializers import AtencionTrasladoSerializer
 from .models import Atencion, HistorialCambios, Usuario
 from .serializers import UsuarioSerializer
 from .models import Usuario
@@ -23,7 +22,9 @@ from .serializers import (
     UsuarioSerializer,
     CarreraSerializer,
     CategoriaAtencionSerializer,
-    EstadoAtencionSerializer
+    EstadoAtencionSerializer,
+    AtencionTrasladoSerializer,
+    DerivacionCreateSerializer,
 )
 
 # --- ESTUDIANTE ---
@@ -75,15 +76,22 @@ class EstudianteDetail(APIView):
 
 
 class AtencionListCreate(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        if self.request.user.is_superuser:
+            return Atencion.objects.all()
+        return Atencion.objects.filter(funcionario__area=self.request.user.area)
+
     def get(self, request):
-        atenciones = Atencion.objects.all()
+        atenciones = self.get_queryset()
         serializer = AtencionSerializer(atenciones, many=True)
         return Response(serializer.data)
 
     def post(self, request):
         serializer = AtencionSerializer(data=request.data)
         if serializer.is_valid():
-            atencion = serializer.save()
+            atencion = serializer.save(funcionario=request.user)
             return Response(AtencionSerializer(atencion).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -122,24 +130,6 @@ class UsuarioActual(APIView):
             "perfil": user.perfil,
             "is_superuser": user.is_superuser,
         })
-
-
-class UsuarioCreateView(APIView):
-    permission_classes = [IsAdminUser]
-
-    def post(self, request):
-        serializer = UsuarioSerializer(data=request.data)
-        if serializer.is_valid():
-            usuario = Usuario.objects.create_user(
-                username=serializer.validated_data['username'],
-                email=serializer.validated_data['email'],
-                first_name=serializer.validated_data.get('first_name', ''),
-                last_name=serializer.validated_data.get('last_name', ''),
-                password=request.data['password'],
-                perfil=serializer.validated_data['perfil']
-            )
-            return Response(UsuarioSerializer(usuario).data, status=201)
-        return Response(serializer.errors, status=400)
 
 
 class UsuarioCreateView(APIView):
@@ -233,3 +223,28 @@ class ListaUsuariosView(APIView):
         usuarios = Usuario.objects.all()
         serializer = UsuarioSerializer(usuarios, many=True)
         return Response(serializer.data)
+
+
+class DerivarAtencionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            atencion = Atencion.objects.get(pk=pk)
+            serializer = DerivacionCreateSerializer(data=request.data)
+            if serializer.is_valid():
+                derivacion = serializer.save(
+                    atencion=atencion,
+                    de_area=request.user.area,
+                    usuario_deriva=request.user
+                )
+                # Transferir responsabilidad
+                nuevo_usuario = Usuario.objects.filter(
+                    area=derivacion.a_area, perfil='funcionario').first()
+                if nuevo_usuario:
+                    atencion.usuario = nuevo_usuario
+                    atencion.save()
+                return Response({'mensaje': 'Derivación registrada correctamente.'}, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Atencion.DoesNotExist:
+            return Response({'error': 'Atención no encontrada.'}, status=status.HTTP_404_NOT_FOUND)

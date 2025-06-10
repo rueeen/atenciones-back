@@ -3,6 +3,13 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
+class Area(models.Model):
+    nombre = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nombre
+
+
 class Usuario(AbstractUser):
     PERFILES = [
         ('administrador', 'Administrador'),
@@ -10,18 +17,11 @@ class Usuario(AbstractUser):
     ]
     perfil = models.CharField(max_length=20, choices=PERFILES)
     area = models.ForeignKey(
-        'Area', on_delete=models.SET_NULL, null=True, blank=True)
+        Area, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         verbose_name = _('usuario')
         verbose_name_plural = _('usuarios')
-
-
-class Area(models.Model):
-    nombre = models.CharField(max_length=100)
-
-    def __str__(self):
-        return self.nombre
 
 
 class Carrera(models.Model):
@@ -91,3 +91,19 @@ class HistorialCambios(models.Model):
 
     def __str__(self):
         return f"Historial atención {self.atencion.id} por {self.usuario}"
+
+
+class Derivacion(models.Model):
+    atencion = models.ForeignKey(
+        Atencion, on_delete=models.CASCADE, related_name='derivaciones')
+    de_area = models.ForeignKey(
+        Area, on_delete=models.SET_NULL, null=True, related_name='derivaciones_salientes')
+    a_area = models.ForeignKey(
+        Area, on_delete=models.SET_NULL, null=True, related_name='derivaciones_entrantes')
+    usuario_deriva = models.ForeignKey(
+        Usuario, on_delete=models.SET_NULL, null=True, related_name='derivaciones_realizadas')
+    fecha = models.DateTimeField(auto_now_add=True)
+    motivo = models.TextField()
+
+    def __str__(self):
+        return f"Derivación {self.atencion.id} de {self.de_area} a {self.a_area}"

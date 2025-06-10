@@ -1,7 +1,7 @@
 from django.urls import path
 from .views import (
     CarreraListView, CategoriaAtencionListView, EstadoAtencionListView, EstudianteListCreate,
-    EstudianteDetail, AtencionListCreate, AtencionDetail, HistorialAtencionView, ListaUsuariosView, TrasladarAtencionView, UsuarioActual, UsuarioCreateView
+    EstudianteDetail, AtencionListCreate, AtencionDetail, HistorialAtencionView, ListaUsuariosView, TrasladarAtencionView, UsuarioActual, UsuarioCreateView, DerivarAtencionView
 )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -24,7 +24,8 @@ urlpatterns = [
          TrasladarAtencionView.as_view(), name='trasladar-atencion'),
     path('atenciones/<int:atencion_id>/historial/',
          HistorialAtencionView.as_view(), name='historial-atencion'),
-
+    path('atenciones/<int:pk>/derivar/',
+         DerivarAtencionView.as_view(), name='derivar-atencion'),
 
     # JWT Authentication
     path('login/', TokenObtainPairView.as_view(),

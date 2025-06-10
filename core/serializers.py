@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Usuario, Estudiante, Atencion, CategoriaAtencion, EstadoAtencion, DocumentoAdjunto, HistorialCambios, Area, Carrera
+from .models import Derivacion, Usuario, Estudiante, Atencion, CategoriaAtencion, EstadoAtencion, DocumentoAdjunto, HistorialCambios, Area, Carrera
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
@@ -44,8 +44,6 @@ class DocumentoAdjuntoSerializer(serializers.ModelSerializer):
         model = DocumentoAdjunto
         fields = '__all__'
 
-
-# core/serializers.py
 class HistorialCambiosSerializer(serializers.ModelSerializer):
     usuario_nombre = serializers.SerializerMethodField()
 
@@ -59,6 +57,7 @@ class HistorialCambiosSerializer(serializers.ModelSerializer):
         return None
 
 
+# Serializer para Atencion
 class AtencionSerializer(serializers.ModelSerializer):
     documentos = DocumentoAdjuntoSerializer(many=True, read_only=True)
     historial = HistorialCambiosSerializer(many=True, read_only=True)
@@ -66,6 +65,7 @@ class AtencionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Atencion
         fields = '__all__'
+        read_only_fields = ['funcionario']
 
 
 class AreaSerializer(serializers.ModelSerializer):
@@ -87,3 +87,17 @@ class CarreraSerializer(serializers.ModelSerializer):
     class Meta:
         model = Carrera
         fields = ['id', 'nombre']
+
+
+class DerivacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Derivacion
+        fields = '__all__'
+
+
+class DerivacionCreateSerializer(serializers.ModelSerializer):
+    a_area = serializers.PrimaryKeyRelatedField(queryset=Area.objects.all())
+
+    class Meta:
+        model = Derivacion
+        fields = ['a_area', 'motivo']
