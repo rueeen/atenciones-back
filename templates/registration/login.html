@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block auth_content %}
+<div class="login-page d-flex align-items-center justify-content-center">
+  <div class="card login-card p-4 shadow-sm">
+    <h2 class="mb-3">Ingreso institucional</h2>
+    <form method="post">{% csrf_token %}
+      {{ form.as_p }}
+      <button class="btn btn-main w-100" type="submit">Ingresar</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

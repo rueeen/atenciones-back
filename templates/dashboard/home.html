@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card metric-card"><div class="card-body"><h6>Casos abiertos</h6><h3>{{ open_total }}</h3></div></div></div>
+  <div class="col-md-3"><div class="card metric-card"><div class="card-body"><h6>Casos cerrados</h6><h3>{{ closed_total }}</h3></div></div></div>
+  <div class="col-md-3"><div class="card metric-card"><div class="card-body"><h6>Atrasados</h6><h3>{{ overdue_cases }}</h3></div></div></div>
+  <div class="col-md-3"><div class="card metric-card"><div class="card-body"><h6>Prom. resolución</h6><h6>{{ avg_resolution|default:'N/A' }}</h6></div></div></div>
+</div>
+<div class="card">
+  <div class="card-header">Casos recientes</div>
+  <div class="table-responsive"><table class="table app-table mb-0"><thead><tr><th>Folio</th><th>Estudiante</th><th>Estado</th><th>Prioridad</th></tr></thead>
+  <tbody>{% for case in recent_cases %}<tr><td><a href="{% url 'cases:detail' case.pk %}">{{ case.folio }}</a></td><td>{{ case.student.full_name }}</td><td><span class="badge bg-status">{{ case.get_status_display }}</span></td><td>{{ case.get_priority_display }}</td></tr>{% empty %}<tr><td colspan="4">Sin registros</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>
+{% endblock %}
