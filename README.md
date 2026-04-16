@@ -43,6 +43,21 @@ Credenciales de ejemplo después de seed:
 - Desarrollo: SQLite por defecto.
 - Producción: exportar `DB_ENGINE=postgresql` y variables `POSTGRES_*`.
 
+### Troubleshooting rápido
+
+Si al entrar a `/login/` aparece:
+
+`OperationalError: no such table: auth_user`
+
+la base de datos todavía no tiene migraciones aplicadas. Ejecuta:
+
+```bash
+python manage.py migrate
+python manage.py seed_initial_data
+```
+
+Luego reinicia el servidor (`python manage.py runserver`).
+
 ## Tests básicos
 
 ```bash
