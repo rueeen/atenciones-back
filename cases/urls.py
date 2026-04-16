@@ -1,0 +1,32 @@
+from django.urls import path
+from .views import (
+    CaseAttachmentCreateView,
+    CaseCloseView,
+    CaseCommentCreateView,
+    CaseCreateView,
+    CaseDetailView,
+    CaseListView,
+    CaseReassignView,
+    CaseTransferView,
+    CaseUpdateView,
+    CategoryCreateView,
+    CategoryListView,
+    SubcategoryCreateView,
+)
+
+app_name = 'cases'
+
+urlpatterns = [
+    path('', CaseListView.as_view(), name='list'),
+    path('new/', CaseCreateView.as_view(), name='create'),
+    path('<int:pk>/', CaseDetailView.as_view(), name='detail'),
+    path('<int:pk>/edit/', CaseUpdateView.as_view(), name='update'),
+    path('<int:pk>/transfer/', CaseTransferView.as_view(), name='transfer'),
+    path('<int:pk>/reassign/', CaseReassignView.as_view(), name='reassign'),
+    path('<int:pk>/comment/', CaseCommentCreateView.as_view(), name='comment'),
+    path('<int:pk>/attachment/', CaseAttachmentCreateView.as_view(), name='attachment'),
+    path('<int:pk>/close/', CaseCloseView.as_view(), name='close'),
+    path('categories/', CategoryListView.as_view(), name='category-list'),
+    path('categories/new/', CategoryCreateView.as_view(), name='category-create'),
+    path('subcategories/new/', SubcategoryCreateView.as_view(), name='subcategory-create'),
+]

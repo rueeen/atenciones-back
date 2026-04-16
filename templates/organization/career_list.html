@@ -1,0 +1,2 @@
+{% extends 'base.html' %}
+{% block content %}<h2>Carreras</h2><ul class="list-group">{% for c in careers %}<li class="list-group-item">{{ c.name }} - {{ c.academic_area.name }}</li>{% endfor %}</ul>{% endblock %}
