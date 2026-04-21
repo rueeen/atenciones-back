@@ -1,3 +1,7 @@
+from students.models import Student
+from students.forms import StudentForm
+from django.views.generic import CreateView
+from organization.models import Career
 from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -5,9 +9,6 @@ from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
-
-from .forms import StudentForm
-from .models import Student
 
 
 class StudentListView(LoginRequiredMixin, ListView):
@@ -59,6 +60,28 @@ class StudentModalCreateView(LoginRequiredMixin, View):
             'success': False,
             'html': html,
         }, status=400)
+
+
+class CareersByAcademicAreaView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        academic_area_id = request.GET.get('academic_area_id')
+
+        if not academic_area_id:
+            return JsonResponse({'careers': []})
+
+        careers = Career.objects.filter(
+            academic_area_id=academic_area_id
+        ).order_by('name')
+
+        data = [
+            {
+                'id': career.id,
+                'name': career.name,
+            }
+            for career in careers
+        ]
+
+        return JsonResponse({'careers': data})
 
 
 class StudentLookupByRutView(LoginRequiredMixin, View):
