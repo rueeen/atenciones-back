@@ -1,6 +1,5 @@
 from students.models import Student
 from students.forms import StudentForm
-from django.views.generic import CreateView
 from organization.models import Career
 from django.http import JsonResponse
 from django.contrib import messages
@@ -68,6 +67,14 @@ class CareersByAcademicAreaView(LoginRequiredMixin, View):
 
         if not academic_area_id:
             return JsonResponse({'careers': []})
+
+        try:
+            academic_area_id = int(academic_area_id)
+        except (TypeError, ValueError):
+            return JsonResponse(
+                {'careers': [], 'message': 'El área académica enviada no es válida.'},
+                status=400
+            )
 
         careers = Career.objects.filter(
             academic_area_id=academic_area_id

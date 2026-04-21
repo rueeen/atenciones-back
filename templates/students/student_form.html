@@ -1,5 +1,90 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
+{% load static %}
 {% block content %}
-<div class="card p-3"><h2>Formulario de estudiante</h2><form method="post">{% csrf_token %}{{ form|crispy }}<button class="btn btn-main">Guardar</button></form></div>
+<div class="container py-4">
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-4">
+      <h2 class="h4 mb-4">Formulario de estudiante</h2>
+
+      <form method="post" data-student-form="true" data-careers-url="{% url 'students:careers_by_academic_area' %}">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label for="{{ form.full_name.id_for_label }}" class="form-label">Nombre completo</label>
+            {{ form.full_name }}
+            {% if form.full_name.errors %}
+              <div class="text-danger small mt-1">{{ form.full_name.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label for="{{ form.rut.id_for_label }}" class="form-label">RUT</label>
+            {{ form.rut }}
+            {% if form.rut.errors %}
+              <div class="text-danger small mt-1">{{ form.rut.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label for="{{ form.email.id_for_label }}" class="form-label">Correo electrónico</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+              <div class="text-danger small mt-1">{{ form.email.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label for="{{ form.phone.id_for_label }}" class="form-label">Teléfono</label>
+            {{ form.phone }}
+            {% if form.phone.errors %}
+              <div class="text-danger small mt-1">{{ form.phone.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label for="{{ form.academic_area.id_for_label }}" class="form-label">Área académica</label>
+            {{ form.academic_area }}
+            {% if form.academic_area.errors %}
+              <div class="text-danger small mt-1">{{ form.academic_area.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label for="{{ form.career.id_for_label }}" class="form-label">Carrera</label>
+            {{ form.career }}
+            {% if form.career.errors %}
+              <div class="text-danger small mt-1">{{ form.career.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-md-6">
+            <label for="{{ form.schedule.id_for_label }}" class="form-label">Jornada</label>
+            {{ form.schedule }}
+            {% if form.schedule.errors %}
+              <div class="text-danger small mt-1">{{ form.schedule.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+
+          <div class="col-12">
+            <label for="{{ form.observations.id_for_label }}" class="form-label">Observaciones</label>
+            {{ form.observations }}
+            {% if form.observations.errors %}
+              <div class="text-danger small mt-1">{{ form.observations.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+          <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="{% static 'js/student_career_dependency.js' %}"></script>
 {% endblock %}
