@@ -1,18 +1,19 @@
 {% extends 'base.html' %}
+{% load crispy_forms_tags %}
 {% block content %}
 <h2>{{ case.folio }} - {{ case.title }}</h2>
 <div class="row g-3">
 <div class="col-lg-8">
   <div class="card p-3 mb-3"><h5>Datos generales</h5><p>{{ case.description }}</p><p><strong>Estudiante:</strong> {{ case.student.full_name }} ({{ case.student.rut }})</p><p><span class="badge bg-status">{{ case.get_status_display }}</span></p></div>
   <div class="card p-3 mb-3"><h5>Bitácora</h5>
-    <form method="post" action="{% url 'cases:comment' case.pk %}">{% csrf_token %}{{ comment_form.as_p }}<button class="btn btn-main">Comentar</button></form>
+    <form method="post" action="{% url 'cases:comment' case.pk %}">{% csrf_token %}{{ comment_form|crispy }}<button class="btn btn-main">Comentar</button></form>
     <hr>{% for c in case.comments.all %}<p><strong>{{ c.author }}:</strong> {{ c.comment }} <small>{{ c.created_at }}</small></p>{% empty %}<p>Sin comentarios.</p>{% endfor %}
   </div>
-  <div class="card p-3"><h5>Timeline de historial</h5><ul class="timeline">{% for h in case.history.all %}<li><strong>{{ h.get_event_type_display }}</strong> - {{ h.description }}<br><small>{{ h.created_at }} · {{ h.actor }}</small></li>{% empty %}<li>Sin historial.</li>{% endfor %}</ul></div>
+  <div class="card p-3"><h5>Línea de tiempo del historial</h5><ul class="timeline">{% for h in case.history.all %}<li><strong>{{ h.get_event_type_display }}</strong> - {{ h.description }}<br><small>{{ h.created_at }} · {{ h.actor }}</small></li>{% empty %}<li>Sin historial.</li>{% endfor %}</ul></div>
 </div>
 <div class="col-lg-4">
-  <div class="card p-3 mb-3"><h5>Adjuntos</h5><form method="post" enctype="multipart/form-data" action="{% url 'cases:attachment' case.pk %}">{% csrf_token %}{{ attachment_form.as_p }}<button class="btn btn-main">Subir</button></form><hr>{% for a in case.attachments.all %}<p><a href="{{ a.file.url }}">{{ a.file.name }}</a></p>{% empty %}<p>Sin adjuntos</p>{% endfor %}</div>
-  {% if can_transfer %}<div class="card p-3 mb-3"><h5>Derivar</h5><form method="post" action="{% url 'cases:transfer' case.pk %}">{% csrf_token %}<div class="mb-2"><label>Área destino</label><select class="form-select" name="to_area">{% for area in available_areas %}<option value="{{ area.id }}">{{ area.name }}</option>{% endfor %}</select></div><div class="mb-2"><label>Motivo</label><textarea class="form-control" name="note" required></textarea></div><button class="btn btn-main">Derivar</button></form></div>{% endif %}
+  <div class="card p-3 mb-3"><h5>Adjuntos</h5><form method="post" enctype="multipart/form-data" action="{% url 'cases:attachment' case.pk %}">{% csrf_token %}{{ attachment_form|crispy }}<button class="btn btn-main">Subir</button></form><hr>{% for a in case.attachments.all %}<p><a href="{{ a.file.url }}">{{ a.file.name }}</a></p>{% empty %}<p>Sin adjuntos</p>{% endfor %}</div>
+  {% if can_transfer %}<div class="card p-3 mb-3"><h5>Derivar</h5><form method="post" action="{% url 'cases:transfer' case.pk %}">{% csrf_token %}<div class="mb-2"><label>Área de destino</label><select class="form-select" name="to_area">{% for area in available_areas %}<option value="{{ area.id }}">{{ area.name }}</option>{% endfor %}</select></div><div class="mb-2"><label>Motivo</label><textarea class="form-control" name="note" required></textarea></div><button class="btn btn-main">Derivar</button></form></div>{% endif %}
   {% if can_close %}<div class="card p-3"><h5>Cierre</h5><form method="post" action="{% url 'cases:close' case.pk %}">{% csrf_token %}<select class="form-select mb-2" name="status"><option value="resolved">Resuelto</option><option value="closed">Cerrado</option><option value="rejected">Rechazado</option></select><textarea class="form-control mb-2" name="final_resolution" placeholder="Resolución final" required></textarea><button class="btn btn-main">Cerrar caso</button></form></div>{% endif %}
 </div>
 </div>

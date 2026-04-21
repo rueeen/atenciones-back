@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard{% endblock %}
+{% block title %}Panel de control{% endblock %}
 {% block content %}
 <div class="row g-3 mb-4">
   <div class="col-md-3"><div class="card metric-card"><div class="card-body"><h6>Casos abiertos</h6><h3>{{ open_total }}</h3></div></div></div>
   <div class="col-md-3"><div class="card metric-card"><div class="card-body"><h6>Casos cerrados</h6><h3>{{ closed_total }}</h3></div></div></div>
   <div class="col-md-3"><div class="card metric-card"><div class="card-body"><h6>Atrasados</h6><h3>{{ overdue_cases }}</h3></div></div></div>
-  <div class="col-md-3"><div class="card metric-card"><div class="card-body"><h6>Prom. resolución</h6><h6>{{ avg_resolution|default:'N/A' }}</h6></div></div></div>
+  <div class="col-md-3"><div class="card metric-card"><div class="card-body"><h6>Prom. resolución</h6><h6>{{ avg_resolution|default:'No disponible' }}</h6></div></div></div>
 </div>
 <div class="card">
   <div class="card-header">Casos recientes</div>
