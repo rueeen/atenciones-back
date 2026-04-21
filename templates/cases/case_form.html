@@ -1,7 +1,210 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
+
 {% block content %}
-<div class="card p-3"><h2 class="mb-3">Formulario de caso</h2>
-<form method="post">{% csrf_token %}{{ form|crispy }}<button class="btn btn-main">Guardar</button></form>
+<div class="container py-4">
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white border-bottom">
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+        <div>
+          <h2 class="mb-1">Nuevo caso</h2>
+          <p class="text-muted mb-0">Registra una nueva atención o solicitud en el sistema.</p>
+        </div>
+        <a href="{% url 'cases:list' %}" class="btn btn-outline-secondary">
+          Volver al listado
+        </a>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <form method="post" id="case-form" novalidate>
+        {% csrf_token %}
+
+        <div class="row g-4">
+          <div class="col-lg-8">
+            <div class="border rounded-3 p-3 h-100">
+              <h5 class="mb-3">Información del caso</h5>
+
+              <div class="mb-3">
+                {{ form.title|as_crispy_field }}
+              </div>
+
+              <div class="mb-3">
+                {{ form.description|as_crispy_field }}
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-6">
+                  {{ form.category|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                  {{ form.subcategory|as_crispy_field }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="border rounded-3 p-3 mb-4">
+              <h5 class="mb-3">Datos de gestión</h5>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Área actual</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  value="{{ request.user.profile.area.name }}"
+                  disabled
+                >
+                <div class="form-text">Se asigna automáticamente según el usuario logueado.</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Responsable actual</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  value="{{ request.user.get_full_name|default:request.user.username }}"
+                  disabled
+                >
+                <div class="form-text">Se asigna automáticamente al crear el caso.</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Estado inicial</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  value="Abierto"
+                  disabled
+                >
+              </div>
+
+              <div class="row g-3">
+                <div class="col-md-6 col-lg-12">
+                  {{ form.priority|as_crispy_field }}
+                </div>
+                <div class="col-md-6 col-lg-12">
+                  {{ form.due_date|as_crispy_field }}
+                </div>
+              </div>
+            </div>
+
+            <div class="border rounded-3 p-3">
+              <h5 class="mb-3">Estudiante</h5>
+
+              {{ form.student }}
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Buscar estudiante por RUT</label>
+                <div class="input-group">
+                  <input
+                    type="text"
+                    id="student-search"
+                    class="form-control"
+                    placeholder="Ej.: 12.345.678-9"
+                  >
+                  <button
+                    class="btn btn-outline-primary"
+                    type="button"
+                    data-bs-toggle="modal"
+                    data-bs-target="#studentModal"
+                  >
+                    Buscar
+                  </button>
+                </div>
+                <div class="form-text">Puede buscar un estudiante existente o registrar uno nuevo.</div>
+              </div>
+
+              <div class="alert alert-light border mb-0" id="student-selected-box">
+                <div class="fw-semibold">Ningún estudiante seleccionado</div>
+                <small class="text-muted">Debe seleccionar o registrar un estudiante antes de guardar.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-column flex-md-row justify-content-end gap-2 mt-4">
+          <a href="{% url 'cases:list' %}" class="btn btn-outline-secondary">
+            Cancelar
+          </a>
+          <button type="submit" name="action" value="save" class="btn btn-primary">
+            Guardar caso
+          </button>
+          <button type="submit" name="action" value="close" class="btn btn-success">
+            Guardar y cerrar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
+
+<div class="modal fade" id="studentModal" tabindex="-1" aria-labelledby="studentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="studentModalLabel">Buscar o registrar estudiante</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">RUT</label>
+          <div class="input-group">
+            <input type="text" class="form-control" id="modal-student-rut" placeholder="Ingrese RUT">
+            <button type="button" class="btn btn-outline-primary" id="btn-search-student">
+              Buscar
+            </button>
+          </div>
+        </div>
+
+        <div id="student-search-results" class="mb-3"></div>
+
+        <hr>
+
+        <h6 class="mb-3">Registrar estudiante</h6>
+        <p class="text-muted small">
+          Si el estudiante no existe, puede registrarlo desde este modal.
+        </p>
+
+        <div id="student-create-form-container">
+          {# Aquí después puedes cargar un formulario parcial vía HTMX/AJAX #}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const categorySelect = document.getElementById('id_category');
+    const subcategorySelect = document.getElementById('id_subcategory');
+
+    if (categorySelect && subcategorySelect) {
+      categorySelect.addEventListener('change', function () {
+        const categoryId = this.value;
+
+        subcategorySelect.innerHTML = '<option value="">---------</option>';
+
+        if (!categoryId) {
+          return;
+        }
+
+        fetch("{% url 'cases:ajax_load_subcategories' %}?category_id=" + categoryId)
+          .then(response => response.json())
+          .then(data => {
+            data.forEach(function (item) {
+              const option = document.createElement('option');
+              option.value = item.id;
+              option.textContent = item.name;
+              subcategorySelect.appendChild(option);
+            });
+          })
+          .catch(error => {
+            console.error('Error cargando subcategorías:', error);
+          });
+      });
+    }
+  });
+</script>
 {% endblock %}

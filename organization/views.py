@@ -16,4 +16,4 @@ class CareerListView(LoginRequiredMixin, ListView):
     context_object_name = 'careers'
 
     def get_queryset(self):
-        return Career.objects.select_related('academic_area', 'academic_area__parent_area')
+        return Career.objects.select_related('academic_area', 'academic_area__area')

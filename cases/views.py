@@ -1,3 +1,9 @@
+from django.http import JsonResponse
+from cases.models import CaseSubcategory
+from cases.models import Case, CaseHistory
+from cases.forms import CaseForm
+from django.views.generic import CreateView
+from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Avg, Count, F, Q
@@ -28,7 +34,8 @@ class CaseListView(LoginRequiredMixin, ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        qs = visible_cases_for(self.request.user).select_related('student', 'current_area', 'category', 'current_assignee')
+        qs = visible_cases_for(self.request.user).select_related(
+            'student', 'current_area', 'category', 'current_assignee')
         search = self.request.GET.get('q')
         if search:
             qs = qs.filter(
@@ -55,21 +62,59 @@ class CaseCreateView(LoginRequiredMixin, CreateView):
     template_name = 'cases/case_form.html'
     success_url = reverse_lazy('cases:list')
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         profile = self.request.user.profile
+
         form.instance.created_by = self.request.user
         form.instance.origin_area = profile.area
-        if not form.instance.current_area_id:
-            form.instance.current_area = profile.area
+        form.instance.current_area = profile.area
+        form.instance.current_assignee = self.request.user
+
+        action = self.request.POST.get('action')
+
+        if action == 'close':
+            form.instance.status = Case.Status.CLOSED
+            if not form.instance.final_resolution:
+                form.instance.final_resolution = 'Caso cerrado al momento de su creación.'
+        else:
+            form.instance.status = Case.Status.OPEN
+
         response = super().form_valid(form)
+
         CaseHistory.objects.create(
             case=self.object,
             event_type=CaseHistory.EventType.CREATED,
             description='Caso creado en el sistema.',
             actor=self.request.user,
         )
-        messages.success(self.request, f'Caso {self.object.folio} creado correctamente.')
+
+        if self.object.status == Case.Status.CLOSED:
+            CaseHistory.objects.create(
+                case=self.object,
+                event_type=CaseHistory.EventType.CLOSED,
+                description='Caso cerrado al momento de su creación.',
+                actor=self.request.user,
+            )
+            messages.success(
+                self.request, f'Caso {self.object.folio} creado y cerrado correctamente.')
+        else:
+            messages.success(
+                self.request, f'Caso {self.object.folio} creado correctamente.')
+
         return response
+
+
+def load_subcategories(request):
+    category_id = request.GET.get('category_id')
+    subcategories = CaseSubcategory.objects.filter(
+        category_id=category_id
+    ).order_by('name').values('id', 'name')
+    return JsonResponse(list(subcategories), safe=False)
 
 
 class CaseDetailView(LoginRequiredMixin, DetailView):
@@ -86,7 +131,8 @@ class CaseDetailView(LoginRequiredMixin, DetailView):
         context['attachment_form'] = CaseAttachmentForm()
         context['can_transfer'] = can_transfer_or_reassign(self.request.user)
         context['can_close'] = can_close_case(self.request.user)
-        context['available_areas'] = Area.objects.exclude(pk=self.object.current_area_id)
+        context['available_areas'] = Area.objects.exclude(
+            pk=self.object.current_area_id)
         return context
 
 
@@ -124,7 +170,8 @@ class CaseTransferView(LoginRequiredMixin, View):
         if not can_transfer_or_reassign(request.user):
             messages.error(request, 'No tiene permisos para derivar casos.')
             return redirect('cases:detail', pk=pk)
-        form = CaseTransferForm(request.POST, areas_qs=Area.objects.exclude(pk=case.current_area_id))
+        form = CaseTransferForm(
+            request.POST, areas_qs=Area.objects.exclude(pk=case.current_area_id))
         if form.is_valid():
             transfer = form.save(commit=False)
             transfer.case = case
@@ -142,7 +189,8 @@ class CaseTransferView(LoginRequiredMixin, View):
             )
             messages.success(request, 'Caso derivado correctamente.')
         else:
-            messages.error(request, 'Debe indicar área de destino y comentario de derivación.')
+            messages.error(
+                request, 'Debe indicar área de destino y comentario de derivación.')
         return redirect('cases:detail', pk=pk)
 
 
@@ -206,7 +254,8 @@ class CaseAttachmentCreateView(LoginRequiredMixin, View):
             )
             messages.success(request, 'Adjunto cargado correctamente.')
         else:
-            messages.error(request, 'Adjunto inválido. Revise formato o tamaño.')
+            messages.error(
+                request, 'Adjunto inválido. Revise formato o tamaño.')
         return redirect('cases:detail', pk=pk)
 
 
@@ -227,7 +276,8 @@ class CaseCloseView(LoginRequiredMixin, View):
             )
             messages.success(request, 'Caso cerrado correctamente.')
         else:
-            messages.error(request, 'Para cerrar debe registrar estado final y resolución.')
+            messages.error(
+                request, 'Para cerrar debe registrar estado final y resolución.')
         return redirect('cases:detail', pk=pk)
 
 
