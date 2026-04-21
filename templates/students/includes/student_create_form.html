@@ -1,4 +1,10 @@
-<form id="student-create-form" method="post" action="{% url 'students:modal_create' %}">
+<form
+  id="student-create-form"
+  method="post"
+  action="{% url 'students:modal_create' %}"
+  data-student-form="true"
+  data-careers-url="{% url 'students:careers_by_academic_area' %}"
+>
   {% csrf_token %}
 
   <div class="row g-3">
@@ -73,45 +79,3 @@
     </button>
   </div>
 </form>
-
-<script>
-document.addEventListener('change', async function (event) {
-  if (event.target.id === 'id_academic_area') {
-    const academicAreaId = event.target.value;
-    const careerSelect = document.getElementById('id_career');
-
-    console.log('academic_area_id:', academicAreaId);
-
-    if (!careerSelect) {
-      return;
-    }
-
-    careerSelect.innerHTML = '<option value="">Seleccione una carrera</option>';
-
-    if (!academicAreaId) {
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        "{% url 'students:careers_by_academic_area' %}?academic_area_id=" + academicAreaId
-      );
-
-      if (!response.ok) {
-        throw new Error('No se pudieron cargar las carreras');
-      }
-
-      const data = await response.json();
-
-      data.careers.forEach(function (career) {
-        const option = document.createElement('option');
-        option.value = career.id;
-        option.textContent = career.name;
-        careerSelect.appendChild(option);
-      });
-    } catch (error) {
-      console.error('Error al cargar carreras:', error);
-    }
-  }
-});
-</script>
