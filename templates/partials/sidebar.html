@@ -6,5 +6,11 @@
   <a href="{% url 'organization:areas' %}" class="d-block mb-2">Áreas</a>
   <a href="{% url 'organization:careers' %}" class="d-block mb-2">Carreras</a>
   <a href="{% url 'accounts:user-create' %}" class="d-block mb-2">Usuarios</a>
-  <a href="{% url 'logout' %}" class="d-block mt-4">Cerrar sesión</a>
+
+  <form method="post" action="{% url 'logout' %}" class="mt-4">
+    {% csrf_token %}
+    <button type="submit" class="sidebar-link logout-btn">
+      Cerrar sesión
+    </button>
+  </form>
 </div>
