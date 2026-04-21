@@ -141,6 +141,12 @@ class CaseTransferForm(forms.ModelForm):
         self.fields['note'].required = True
         self.fields['note'].help_text = 'Este motivo quedará registrado en el historial del caso.'
 
+    def clean(self):
+        cleaned_data = super().clean()
+        if not self.case.can_be_transferred():
+            raise forms.ValidationError('No se puede derivar un caso cerrado.')
+        return cleaned_data
+
     def clean_to_area(self):
         to_area = self.cleaned_data['to_area']
         if to_area.pk == self.case.current_area_id:
@@ -152,6 +158,26 @@ class CaseTransferForm(forms.ModelForm):
         if not note:
             raise forms.ValidationError('Debe ingresar el motivo de la derivación.')
         return note
+
+
+class CaseTakeForm(forms.Form):
+    confirm = forms.BooleanField(required=True, initial=True, widget=forms.HiddenInput)
+
+    def __init__(self, *args, **kwargs):
+        self.case = kwargs.pop('case')
+        self.user = kwargs.pop('user')
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if self.case.is_closed:
+            raise forms.ValidationError('No se puede tomar un caso cerrado.')
+        if self.case.current_assignee_id:
+            raise forms.ValidationError('El caso ya tiene responsable asignado.')
+        profile = getattr(self.user, 'profile', None)
+        if not profile or profile.area_id != self.case.current_area_id:
+            raise forms.ValidationError('Solo usuarios del área actual del caso pueden tomarlo.')
+        return cleaned_data
 
 
 class ReassignCaseForm(forms.ModelForm):

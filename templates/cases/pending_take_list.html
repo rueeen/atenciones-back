@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h2>Casos pendientes de toma en mi área</h2>
+  <a class="btn btn-outline-dark" href="{% url 'cases:list' %}">Volver a casos</a>
+</div>
+<div class="alert alert-light border">
+  Aquí se muestran los casos de tu área que están abiertos y sin responsable. Puedes tomarlos para continuar su gestión.
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table class="table app-table mb-0">
+      <thead>
+        <tr>
+          <th>Folio</th>
+          <th>Título</th>
+          <th>Estudiante</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for case in cases %}
+        <tr>
+          <td>{{ case.folio }}</td>
+          <td>{{ case.title }}</td>
+          <td>{{ case.student.full_name }}</td>
+          <td><span class="badge bg-status">{{ case.get_status_display }}</span></td>
+          <td>
+            <form method="post" action="{% url 'cases:take' case.pk %}" class="d-inline">
+              {% csrf_token %}
+              <input type="hidden" name="confirm" value="true">
+              <button class="btn btn-sm btn-outline-dark">Tomar caso</button>
+            </form>
+            <a class="btn btn-sm btn-link" href="{% url 'cases:detail' case.pk %}">Ver</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">No hay casos pendientes de toma en tu área.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
