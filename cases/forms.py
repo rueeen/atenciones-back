@@ -92,7 +92,6 @@ class CaseForm(forms.ModelForm):
         cleaned_data = super().clean()
         category = cleaned_data.get('category')
         subcategory = cleaned_data.get('subcategory')
-        due_date = cleaned_data.get('due_date')
 
         if subcategory and category and subcategory.category_id != category.id:
             self.add_error(
