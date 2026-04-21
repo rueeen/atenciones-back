@@ -14,6 +14,7 @@ from cases.forms import (
     CaseCloseForm,
     CaseCommentForm,
     CaseForm,
+    CaseTakeForm,
     CaseTransferForm,
     CategoryForm,
     ReassignCaseForm,
@@ -140,7 +141,8 @@ class CaseDetailView(LoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context['comment_form'] = CaseCommentForm()
         context['attachment_form'] = CaseAttachmentForm()
-        context['can_transfer'] = can_transfer_or_reassign(self.request.user)
+        context['can_transfer'] = self.object.can_be_transferred()
+        context['can_take_case'] = self.object.can_be_taken_by(self.request.user)
         context['can_close'] = can_close_case(self.request.user)
         context['transfer_form'] = CaseTransferForm(case=self.object)
         return context
@@ -176,9 +178,9 @@ class CaseUpdateView(LoginRequiredMixin, UpdateView):
 
 class CaseTransferView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        case = get_object_or_404(Case, pk=pk)
-        if not can_transfer_or_reassign(request.user):
-            messages.error(request, 'No tiene permisos para derivar casos.')
+        case = get_object_or_404(visible_cases_for(request.user), pk=pk)
+        if not case.can_be_transferred():
+            messages.error(request, 'No se puede derivar un caso cerrado.')
             return redirect('cases:detail', pk=pk)
         form = CaseTransferForm(request.POST, case=case)
         if form.is_valid():
@@ -192,7 +194,7 @@ class CaseTransferView(LoginRequiredMixin, View):
 
                 case.current_area = transfer.to_area
                 case.current_assignee = None
-                case.status = Case.Status.TRANSFERRED
+                case.status = Case.Status.PENDING_AREA
                 case.save(update_fields=['current_area', 'current_assignee', 'status', 'updated_at'])
 
                 description = (
@@ -218,6 +220,47 @@ class CaseTransferView(LoginRequiredMixin, View):
                 field_errors.extend([f'{form.fields[field].label}: {error}' for error in error_list])
             details = ' '.join(field_errors)
             messages.error(request, f'No se pudo derivar el caso. {errors} {details}'.strip())
+        return redirect('cases:detail', pk=pk)
+
+
+class PendingAreaCasesListView(LoginRequiredMixin, ListView):
+    model = Case
+    template_name = 'cases/pending_take_list.html'
+    context_object_name = 'cases'
+    paginate_by = 20
+
+    def get_queryset(self):
+        profile = getattr(self.request.user, 'profile', None)
+        if not profile or not profile.area_id:
+            return Case.objects.none()
+        return visible_cases_for(self.request.user).filter(
+            current_area=profile.area,
+            current_assignee__isnull=True,
+        ).exclude(
+            status__in=[Case.Status.CLOSED, Case.Status.RESOLVED, Case.Status.REJECTED]
+        ).select_related('student', 'current_area', 'category')
+
+
+class CaseTakeView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        case = get_object_or_404(visible_cases_for(request.user), pk=pk)
+        form = CaseTakeForm(request.POST, case=case, user=request.user)
+        if not form.is_valid():
+            messages.error(request, ' '.join(form.non_field_errors()) or 'No fue posible tomar el caso.')
+            return redirect('cases:detail', pk=pk)
+
+        with transaction.atomic():
+            case.current_assignee = request.user
+            if case.status in {Case.Status.TRANSFERRED, Case.Status.PENDING_AREA, Case.Status.OPEN}:
+                case.status = Case.Status.IN_REVIEW
+            case.save(update_fields=['current_assignee', 'status', 'updated_at'])
+            CaseHistory.objects.create(
+                case=case,
+                event_type=CaseHistory.EventType.ASSIGNEE_CHANGED,
+                description=f'Caso tomado por {request.user}. Responsable actual actualizado.',
+                actor=request.user,
+            )
+        messages.success(request, 'Tomaste el caso correctamente.')
         return redirect('cases:detail', pk=pk)
 
 

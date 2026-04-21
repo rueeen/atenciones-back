@@ -89,6 +89,19 @@ class Case(models.Model):
             self.closed_at = timezone.now()
         super().save(*args, **kwargs)
 
+    @property
+    def is_closed(self):
+        return self.status in {self.Status.CLOSED, self.Status.RESOLVED, self.Status.REJECTED}
+
+    def can_be_transferred(self):
+        return not self.is_closed
+
+    def can_be_taken_by(self, user):
+        if self.is_closed or self.current_assignee_id:
+            return False
+        profile = getattr(user, 'profile', None)
+        return bool(profile and profile.area_id == self.current_area_id)
+
 
 class CaseAttachment(models.Model):
     case = models.ForeignKey(Case, on_delete=models.CASCADE, related_name='attachments')

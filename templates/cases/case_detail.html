@@ -3,32 +3,97 @@
 {% block content %}
 <h2>{{ case.folio }} - {{ case.title }}</h2>
 <div class="row g-3">
-<div class="col-lg-8">
-  <div class="card p-3 mb-3"><h5>Datos generales</h5><p>{{ case.description }}</p><p><strong>Estudiante:</strong> {{ case.student.full_name }} ({{ case.student.rut }})</p><p><strong>Área actual:</strong> {{ case.current_area }}</p><p><strong>Responsable actual:</strong> {{ case.current_assignee|default:"Sin asignar" }}</p><p><span class="badge bg-status">{{ case.get_status_display }}</span></p></div>
-  <div class="card p-3 mb-3"><h5>Bitácora</h5>
-    <form method="post" action="{% url 'cases:comment' case.pk %}">{% csrf_token %}{{ comment_form|crispy }}<button class="btn btn-main">Comentar</button></form>
-    <hr>{% for c in case.comments.all %}<p><strong>{{ c.author }}:</strong> {{ c.comment }} <small>{{ c.created_at }}</small></p>{% empty %}<p>Sin comentarios.</p>{% endfor %}
-  </div>
-  <div class="card p-3 mb-3"><h5>Historial de derivaciones</h5>
-    <ul class="list-group list-group-flush">
-      {% for transfer in case.transfers.all %}
-      <li class="list-group-item px-0">
-        <strong>{{ transfer.from_area }}</strong> → <strong>{{ transfer.to_area }}</strong>
-        <br>
-        <small>{{ transfer.created_at }} · {{ transfer.transferred_by }}</small>
-        <p class="mb-0 mt-1">{{ transfer.note }}</p>
-      </li>
+  <div class="col-lg-8">
+    <div class="card p-3 mb-3">
+      <h5>Datos generales</h5>
+      <p>{{ case.description }}</p>
+      <p><strong>Estudiante:</strong> {{ case.student.full_name }} ({{ case.student.rut }})</p>
+      <p><strong>Área actual:</strong> {{ case.current_area }}</p>
+      <p><strong>Responsable actual:</strong> {{ case.current_assignee|default:"Sin asignar" }}</p>
+      <p><span class="badge bg-status">{{ case.get_status_display }}</span></p>
+    </div>
+
+    <div class="card p-3 mb-3">
+      <h5>Bitácora</h5>
+      <form method="post" action="{% url 'cases:comment' case.pk %}">{% csrf_token %}{{ comment_form|crispy }}<button class="btn btn-main">Comentar</button></form>
+      <hr>
+      {% for c in case.comments.all %}
+        <p><strong>{{ c.author }}:</strong> {{ c.comment }} <small>{{ c.created_at }}</small></p>
       {% empty %}
-      <li class="list-group-item px-0">Sin derivaciones registradas.</li>
+        <p>Sin comentarios.</p>
       {% endfor %}
-    </ul>
+    </div>
+
+    <div class="card p-3 mb-3">
+      <h5>Historial de traspasos</h5>
+      <ul class="list-group list-group-flush">
+        {% for transfer in case.transfers.all %}
+          <li class="list-group-item px-0">
+            <strong>{{ transfer.from_area }}</strong> → <strong>{{ transfer.to_area }}</strong>
+            <br>
+            <small>{{ transfer.created_at }} · {{ transfer.transferred_by }}</small>
+            <p class="mb-0 mt-1">{{ transfer.note }}</p>
+          </li>
+        {% empty %}
+          <li class="list-group-item px-0">Sin traspasos registrados.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="card p-3">
+      <h5>Línea de tiempo del historial</h5>
+      <ul class="timeline">
+        {% for h in case.history.all %}
+          <li><strong>{{ h.get_event_type_display }}</strong> - {{ h.description }}<br><small>{{ h.created_at }} · {{ h.actor }}</small></li>
+        {% empty %}
+          <li>Sin historial.</li>
+        {% endfor %}
+      </ul>
+    </div>
   </div>
-  <div class="card p-3"><h5>Línea de tiempo del historial</h5><ul class="timeline">{% for h in case.history.all %}<li><strong>{{ h.get_event_type_display }}</strong> - {{ h.description }}<br><small>{{ h.created_at }} · {{ h.actor }}</small></li>{% empty %}<li>Sin historial.</li>{% endfor %}</ul></div>
-</div>
-<div class="col-lg-4">
-  <div class="card p-3 mb-3"><h5>Adjuntos</h5><form method="post" enctype="multipart/form-data" action="{% url 'cases:attachment' case.pk %}">{% csrf_token %}{{ attachment_form|crispy }}<button class="btn btn-main">Subir</button></form><hr>{% for a in case.attachments.all %}<p><a href="{{ a.file.url }}">{{ a.file.name }}</a></p>{% empty %}<p>Sin adjuntos</p>{% endfor %}</div>
-  {% if can_transfer %}<div class="card p-3 mb-3"><h5>Derivar</h5><form method="post" action="{% url 'cases:transfer' case.pk %}">{% csrf_token %}{{ transfer_form|crispy }}<button class="btn btn-main">Derivar</button></form><small class="text-muted d-block mt-2">Al derivar, el responsable actual se limpia para que el área destino reasigne el caso.</small></div>{% endif %}
-  {% if can_close %}<div class="card p-3"><h5>Cierre</h5><form method="post" action="{% url 'cases:close' case.pk %}">{% csrf_token %}<select class="form-select mb-2" name="status"><option value="resolved">Resuelto</option><option value="closed">Cerrado</option><option value="rejected">Rechazado</option></select><textarea class="form-control mb-2" name="final_resolution" placeholder="Resolución final" required></textarea><button class="btn btn-main">Cerrar caso</button></form></div>{% endif %}
-</div>
+
+  <div class="col-lg-4">
+    <div class="card p-3 mb-3">
+      <h5>Adjuntos</h5>
+      <form method="post" enctype="multipart/form-data" action="{% url 'cases:attachment' case.pk %}">{% csrf_token %}{{ attachment_form|crispy }}<button class="btn btn-main">Subir</button></form>
+      <hr>
+      {% for a in case.attachments.all %}
+        <p><a href="{{ a.file.url }}">{{ a.file.name }}</a></p>
+      {% empty %}
+        <p>Sin adjuntos</p>
+      {% endfor %}
+    </div>
+
+    {% if can_transfer %}
+      <div class="card p-3 mb-3">
+        <h5>Derivar / Traspasar</h5>
+        <form method="post" action="{% url 'cases:transfer' case.pk %}">{% csrf_token %}{{ transfer_form|crispy }}<button class="btn btn-main">Traspasar</button></form>
+        <small class="text-muted d-block mt-2">Al traspasar, el responsable actual se limpia para que el área destino pueda tomar el caso.</small>
+      </div>
+    {% endif %}
+
+    {% if can_take_case %}
+      <div class="card p-3 mb-3">
+        <h5>Tomar caso</h5>
+        <p class="mb-2">Este caso está disponible para tu área y no tiene responsable actual.</p>
+        <form method="post" action="{% url 'cases:take' case.pk %}">
+          {% csrf_token %}
+          <input type="hidden" name="confirm" value="true">
+          <button class="btn btn-outline-dark w-100">Tomar caso</button>
+        </form>
+      </div>
+    {% endif %}
+
+    {% if can_close %}
+      <div class="card p-3">
+        <h5>Cierre</h5>
+        <form method="post" action="{% url 'cases:close' case.pk %}">{% csrf_token %}
+          <select class="form-select mb-2" name="status"><option value="resolved">Resuelto</option><option value="closed">Cerrado</option><option value="rejected">Rechazado</option></select>
+          <textarea class="form-control mb-2" name="final_resolution" placeholder="Resolución final" required></textarea>
+          <button class="btn btn-main">Cerrar caso</button>
+        </form>
+      </div>
+    {% endif %}
+  </div>
 </div>
 {% endblock %}
