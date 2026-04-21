@@ -1,12 +1,13 @@
-from .models import Student
-from .forms import StudentForm
-from django.views import View
-from django.template.loader import render_to_string
 from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView
+
+from .forms import StudentForm
+from .models import Student
 
 
 class StudentListView(LoginRequiredMixin, ListView):
@@ -43,12 +44,10 @@ class StudentModalCreateView(LoginRequiredMixin, View):
             student = form.save()
             return JsonResponse({
                 'success': True,
-                'student': {
-                    'id': student.id,
-                    'full_name': student.full_name,
-                    'rut': student.rut,
-                    'label': f'{student.rut} - {student.full_name}',
-                }
+                'id': student.id,
+                'full_name': student.full_name,
+                'rut': student.rut,
+                'label': f'{student.rut} - {student.full_name}',
             })
 
         html = render_to_string(
@@ -60,6 +59,25 @@ class StudentModalCreateView(LoginRequiredMixin, View):
             'success': False,
             'html': html,
         }, status=400)
+
+
+class StudentLookupByRutView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        rut = (request.GET.get('rut') or '').strip()
+        if not rut:
+            return JsonResponse({'success': False, 'message': 'Debe ingresar un RUT.'}, status=400)
+
+        student = Student.objects.filter(rut__iexact=rut).first()
+        if not student:
+            return JsonResponse({'success': False, 'message': 'No se encontró estudiante con ese RUT.'}, status=404)
+
+        return JsonResponse({
+            'success': True,
+            'id': student.id,
+            'full_name': student.full_name,
+            'rut': student.rut,
+            'label': f'{student.rut} - {student.full_name}',
+        })
 
 
 class StudentUpdateView(LoginRequiredMixin, UpdateView):

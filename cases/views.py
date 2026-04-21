@@ -1,12 +1,7 @@
-from django.http import JsonResponse
-from cases.models import CaseSubcategory
-from cases.models import Case, CaseHistory
-from cases.forms import CaseForm
-from django.views.generic import CreateView
-from django.shortcuts import redirect
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Avg, Count, F, Q
+from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
@@ -68,7 +63,10 @@ class CaseCreateView(LoginRequiredMixin, CreateView):
         return kwargs
 
     def form_valid(self, form):
-        profile = self.request.user.profile
+        profile = getattr(self.request.user, 'profile', None)
+        if not profile or not profile.area:
+            form.add_error(None, 'Tu usuario no tiene área configurada. Contacta al administrador.')
+            return self.form_invalid(form)
 
         form.instance.created_by = self.request.user
         form.instance.origin_area = profile.area
