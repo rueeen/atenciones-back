@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -19,7 +20,6 @@ from cases.forms import (
     SubcategoryForm,
 )
 from cases.models import Case, CaseAttachment, CaseCategory, CaseComment, CaseHistory, CaseSubcategory, CaseTransfer
-from organization.models import Area
 
 
 class CaseListView(LoginRequiredMixin, ListView):
@@ -121,7 +121,20 @@ class CaseDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'case'
 
     def get_queryset(self):
-        return visible_cases_for(self.request.user).prefetch_related('history', 'comments', 'attachments', 'transfers')
+        return visible_cases_for(self.request.user).select_related(
+            'student',
+            'category',
+            'subcategory',
+            'current_area',
+            'current_assignee',
+        ).prefetch_related(
+            'history__actor',
+            'comments__author',
+            'attachments',
+            'transfers__from_area',
+            'transfers__to_area',
+            'transfers__transferred_by',
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -129,8 +142,7 @@ class CaseDetailView(LoginRequiredMixin, DetailView):
         context['attachment_form'] = CaseAttachmentForm()
         context['can_transfer'] = can_transfer_or_reassign(self.request.user)
         context['can_close'] = can_close_case(self.request.user)
-        context['available_areas'] = Area.objects.exclude(
-            pk=self.object.current_area_id)
+        context['transfer_form'] = CaseTransferForm(case=self.object)
         return context
 
 
@@ -168,27 +180,44 @@ class CaseTransferView(LoginRequiredMixin, View):
         if not can_transfer_or_reassign(request.user):
             messages.error(request, 'No tiene permisos para derivar casos.')
             return redirect('cases:detail', pk=pk)
-        form = CaseTransferForm(
-            request.POST, areas_qs=Area.objects.exclude(pk=case.current_area_id))
+        form = CaseTransferForm(request.POST, case=case)
         if form.is_valid():
-            transfer = form.save(commit=False)
-            transfer.case = case
-            transfer.from_area = case.current_area
-            transfer.transferred_by = request.user
-            transfer.save()
-            case.current_area = transfer.to_area
-            case.status = Case.Status.TRANSFERRED
-            case.save(update_fields=['current_area', 'status', 'updated_at'])
-            CaseHistory.objects.create(
-                case=case,
-                event_type=CaseHistory.EventType.TRANSFERRED,
-                description=f'Derivado de {transfer.from_area} a {transfer.to_area}. Motivo: {transfer.note}',
-                actor=request.user,
-            )
+            with transaction.atomic():
+                previous_assignee = case.current_assignee
+                transfer = form.save(commit=False)
+                transfer.case = case
+                transfer.from_area = case.current_area
+                transfer.transferred_by = request.user
+                transfer.save()
+
+                case.current_area = transfer.to_area
+                case.current_assignee = None
+                case.status = Case.Status.TRANSFERRED
+                case.save(update_fields=['current_area', 'current_assignee', 'status', 'updated_at'])
+
+                description = (
+                    f'Derivado de {transfer.from_area} a {transfer.to_area}. '
+                    f'Motivo: {transfer.note}'
+                )
+                if previous_assignee:
+                    description += f' Responsable anterior: {previous_assignee}.'
+
+                CaseHistory.objects.create(
+                    case=case,
+                    event_type=CaseHistory.EventType.TRANSFERRED,
+                    description=description,
+                    actor=request.user,
+                )
             messages.success(request, 'Caso derivado correctamente.')
         else:
-            messages.error(
-                request, 'Debe indicar área de destino y comentario de derivación.')
+            errors = ' '.join(form.non_field_errors())
+            field_errors = []
+            for field, error_list in form.errors.items():
+                if field == '__all__':
+                    continue
+                field_errors.extend([f'{form.fields[field].label}: {error}' for error in error_list])
+            details = ' '.join(field_errors)
+            messages.error(request, f'No se pudo derivar el caso. {errors} {details}'.strip())
         return redirect('cases:detail', pk=pk)
 
 
