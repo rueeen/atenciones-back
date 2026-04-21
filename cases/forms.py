@@ -115,19 +115,43 @@ class SubcategoryForm(forms.ModelForm):
 
 
 class CaseTransferForm(forms.ModelForm):
-    to_area = forms.ModelChoiceField(queryset=None)
-
     class Meta:
         model = CaseTransfer
         fields = ['to_area', 'note']
+        labels = {
+            'to_area': 'Área de destino',
+            'note': 'Motivo de la derivación',
+        }
+        widgets = {
+            'to_area': forms.Select(attrs={'class': 'form-select'}),
+            'note': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Detalle por qué se deriva este caso.',
+            }),
+        }
 
     def __init__(self, *args, **kwargs):
-        areas_qs = kwargs.pop('areas_qs')
+        self.case = kwargs.pop('case')
         super().__init__(*args, **kwargs)
-        self.fields['to_area'].queryset = areas_qs
-        self.fields['to_area'].label = 'Área de destino'
+        self.fields['to_area'].queryset = self.fields['to_area'].queryset.exclude(
+            pk=self.case.current_area_id
+        )
+        self.fields['to_area'].empty_label = 'Seleccione un área'
         self.fields['note'].required = True
-        self.fields['note'].label = 'Motivo de la derivación'
+        self.fields['note'].help_text = 'Este motivo quedará registrado en el historial del caso.'
+
+    def clean_to_area(self):
+        to_area = self.cleaned_data['to_area']
+        if to_area.pk == self.case.current_area_id:
+            raise forms.ValidationError('Debe seleccionar un área distinta al área actual del caso.')
+        return to_area
+
+    def clean_note(self):
+        note = self.cleaned_data['note'].strip()
+        if not note:
+            raise forms.ValidationError('Debe ingresar el motivo de la derivación.')
+        return note
 
 
 class ReassignCaseForm(forms.ModelForm):

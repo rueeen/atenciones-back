@@ -119,6 +119,12 @@ class CaseTransfer(models.Model):
     note = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.case.folio}: {self.from_area} → {self.to_area}'
+
 
 class CaseHistory(models.Model):
     class EventType(models.TextChoices):
