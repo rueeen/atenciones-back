@@ -1,10 +1,12 @@
+from .models import Student
+from .forms import StudentForm
+from django.views import View
+from django.template.loader import render_to_string
+from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView, UpdateView
-
-from students.forms import StudentForm
-from students.models import Student
 
 
 class StudentListView(LoginRequiredMixin, ListView):
@@ -22,6 +24,42 @@ class StudentCreateView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         messages.success(self.request, 'Estudiante creado correctamente.')
         return super().form_valid(form)
+
+
+class StudentModalCreateView(LoginRequiredMixin, View):
+    def get(self, request, *args, **kwargs):
+        form = StudentForm()
+        html = render_to_string(
+            'students/includes/student_create_form.html',
+            {'form': form},
+            request=request
+        )
+        return JsonResponse({'html': html})
+
+    def post(self, request, *args, **kwargs):
+        form = StudentForm(request.POST)
+
+        if form.is_valid():
+            student = form.save()
+            return JsonResponse({
+                'success': True,
+                'student': {
+                    'id': student.id,
+                    'full_name': student.full_name,
+                    'rut': student.rut,
+                    'label': f'{student.rut} - {student.full_name}',
+                }
+            })
+
+        html = render_to_string(
+            'students/includes/student_create_form.html',
+            {'form': form},
+            request=request
+        )
+        return JsonResponse({
+            'success': False,
+            'html': html,
+        }, status=400)
 
 
 class StudentUpdateView(LoginRequiredMixin, UpdateView):

@@ -1,0 +1,67 @@
+<form id="student-create-form" method="post" action="{% url 'students:modal_create' %}">
+  {% csrf_token %}
+
+  <div class="row g-3">
+    <div class="col-md-6">
+      <label for="{{ form.full_name.id_for_label }}" class="form-label">Nombre completo</label>
+      {{ form.full_name }}
+      {% if form.full_name.errors %}
+        <div class="text-danger small mt-1">{{ form.full_name.errors|join:", " }}</div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <label for="{{ form.rut.id_for_label }}" class="form-label">RUT</label>
+      {{ form.rut }}
+      {% if form.rut.errors %}
+        <div class="text-danger small mt-1">{{ form.rut.errors|join:", " }}</div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <label for="{{ form.email.id_for_label }}" class="form-label">Correo electrónico</label>
+      {{ form.email }}
+      {% if form.email.errors %}
+        <div class="text-danger small mt-1">{{ form.email.errors|join:", " }}</div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <label for="{{ form.phone.id_for_label }}" class="form-label">Teléfono</label>
+      {{ form.phone }}
+      {% if form.phone.errors %}
+        <div class="text-danger small mt-1">{{ form.phone.errors|join:", " }}</div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <label for="{{ form.career.id_for_label }}" class="form-label">Carrera</label>
+      {{ form.career }}
+      {% if form.career.errors %}
+        <div class="text-danger small mt-1">{{ form.career.errors|join:", " }}</div>
+      {% endif %}
+    </div>
+
+    <div class="col-md-6">
+      <label for="{{ form.schedule.id_for_label }}" class="form-label">Jornada</label>
+      {{ form.schedule }}
+      {% if form.schedule.errors %}
+        <div class="text-danger small mt-1">{{ form.schedule.errors|join:", " }}</div>
+      {% endif %}
+    </div>
+
+    <div class="col-12">
+      <label for="{{ form.observations.id_for_label }}" class="form-label">Observaciones</label>
+      {{ form.observations }}
+      {% if form.observations.errors %}
+        <div class="text-danger small mt-1">{{ form.observations.errors|join:", " }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end mt-3">
+    <button type="submit" class="btn btn-primary">
+      Registrar estudiante
+    </button>
+  </div>
+</form>
