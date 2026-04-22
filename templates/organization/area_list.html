@@ -1,2 +1,16 @@
 {% extends 'base.html' %}
-{% block content %}<h2>Áreas</h2><ul class="list-group">{% for area in areas %}<li class="list-group-item">{{ area.name }}</li>{% endfor %}</ul>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Áreas</h2>
+  <p class="page-subtitle">Unidades académicas y administrativas habilitadas.</p>
+</div>
+<div class="card">
+  <ul class="list-group list-group-flush">
+    {% for area in areas %}
+    <li class="list-group-item d-flex align-items-center gap-2"><i class="bi bi-diagram-3 text-muted"></i>{{ area.name }}</li>
+    {% empty %}
+    <li class="list-group-item text-muted">Sin áreas registradas.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

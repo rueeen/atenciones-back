@@ -10,7 +10,7 @@
           <h2 class="mb-1">Nuevo caso</h2>
           <p class="text-muted mb-0">Registra una nueva atención o solicitud en el sistema.</p>
         </div>
-        <a href="{% url 'cases:list' %}" class="btn btn-outline-secondary">
+        <a href="{% url 'cases:list' %}" class="btn btn-soft">
           Volver al listado
         </a>
       </div>
@@ -113,11 +113,11 @@
                     class="form-control"
                     placeholder="Ej.: 12.345.678-9"
                   >
-                  <button class="btn btn-outline-primary" type="button" id="btn-search-student-main">
+                  <button class="btn btn-soft" type="button" id="btn-search-student-main">
                     Buscar
                   </button>
                   <button
-                    class="btn btn-outline-success"
+                    class="btn btn-main"
                     type="button"
                     data-bs-toggle="modal"
                     data-bs-target="#studentModal"
@@ -139,13 +139,13 @@
         </div>
 
         <div class="d-flex flex-column flex-md-row justify-content-end gap-2 mt-4">
-          <a href="{% url 'cases:list' %}" class="btn btn-outline-secondary">
+          <a href="{% url 'cases:list' %}" class="btn btn-soft">
             Cancelar
           </a>
-          <button type="submit" name="action" value="save" class="btn btn-primary">
+          <button type="submit" name="action" value="save" class="btn btn-main">
             Guardar caso
           </button>
-          <button type="submit" name="action" value="close" class="btn btn-success">
+          <button type="submit" name="action" value="close" class="btn btn-soft">
             Guardar y cerrar
           </button>
         </div>
