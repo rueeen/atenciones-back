@@ -30,25 +30,27 @@
       <span>Estudiantes</span>
     </a>
 
-    <a href="{% url 'cases:category-list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'cases' and 'category' in request.resolver_match.url_name or request.resolver_match.url_name == 'subcategory-create' %}active{% endif %}">
-      <i class="bi bi-tags"></i>
-      <span>Categorías</span>
-    </a>
+    {% if request.user.profile.role == 'admin' or request.user.profile.role == 'supervisor' %}
+      <a href="{% url 'cases:category-list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'cases' and 'category' in request.resolver_match.url_name or request.resolver_match.url_name == 'subcategory-create' %}active{% endif %}">
+        <i class="bi bi-tags"></i>
+        <span>Categorías</span>
+      </a>
 
-    <a href="{% url 'organization:areas' %}" class="sidebar-link {% if request.resolver_match.namespace == 'organization' and request.resolver_match.url_name == 'areas' %}active{% endif %}">
-      <i class="bi bi-diagram-3"></i>
-      <span>Áreas</span>
-    </a>
+      <a href="{% url 'organization:areas' %}" class="sidebar-link {% if request.resolver_match.namespace == 'organization' and request.resolver_match.url_name == 'areas' %}active{% endif %}">
+        <i class="bi bi-diagram-3"></i>
+        <span>Áreas</span>
+      </a>
 
-    <a href="{% url 'organization:careers' %}" class="sidebar-link {% if request.resolver_match.namespace == 'organization' and request.resolver_match.url_name == 'careers' %}active{% endif %}">
-      <i class="bi bi-book"></i>
-      <span>Carreras</span>
-    </a>
+      <a href="{% url 'organization:careers' %}" class="sidebar-link {% if request.resolver_match.namespace == 'organization' and request.resolver_match.url_name == 'careers' %}active{% endif %}">
+        <i class="bi bi-book"></i>
+        <span>Carreras</span>
+      </a>
 
-    <a href="{% url 'accounts:user-create' %}" class="sidebar-link {% if request.resolver_match.namespace == 'accounts' %}active{% endif %}">
-      <i class="bi bi-people"></i>
-      <span>Usuarios</span>
-    </a>
+      <a href="{% url 'accounts:user-create' %}" class="sidebar-link {% if request.resolver_match.namespace == 'accounts' %}active{% endif %}">
+        <i class="bi bi-people"></i>
+        <span>Usuarios</span>
+      </a>
+    {% endif %}
   </nav>
 
   <form method="post" action="{% url 'logout' %}" class="sidebar-logout mt-3">
