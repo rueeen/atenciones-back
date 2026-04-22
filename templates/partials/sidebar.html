@@ -1,18 +1,54 @@
 <div class="sidebar p-3 h-100 d-flex flex-column">
   <div class="sidebar-header">
-    <span class="sidebar-title">Navegación</span>
-    <span class="sidebar-subtitle">Gestión de atenciones</span>
+    <div class="sidebar-brand-mini">
+      <span class="sidebar-brand-dot"></span>
+      <div>
+        <span class="sidebar-title">Navegación</span>
+        <span class="sidebar-subtitle">Gestión de atenciones</span>
+      </div>
+    </div>
   </div>
 
   <nav class="sidebar-nav flex-grow-1">
-    <a href="{% url 'dashboard:home' %}" class="sidebar-link {% if request.resolver_match.namespace == 'dashboard' %}active{% endif %}"><i class="bi bi-speedometer2"></i><span>Panel de control</span></a>
-    <a href="{% url 'cases:list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'cases' and request.resolver_match.url_name != 'pending-area' %}active{% endif %}"><i class="bi bi-journals"></i><span>Casos</span></a>
-    <a href="{% url 'cases:pending-area' %}" class="sidebar-link {% if request.resolver_match.namespace == 'cases' and request.resolver_match.url_name == 'pending-area' %}active{% endif %}"><i class="bi bi-hourglass-split"></i><span>Pendientes de mi área</span></a>
-    <a href="{% url 'students:list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'students' %}active{% endif %}"><i class="bi bi-mortarboard"></i><span>Estudiantes</span></a>
-    <a href="{% url 'cases:category-list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'cases' and 'category' in request.resolver_match.url_name or request.resolver_match.url_name == 'subcategory-create' %}active{% endif %}"><i class="bi bi-tags"></i><span>Categorías</span></a>
-    <a href="{% url 'organization:areas' %}" class="sidebar-link {% if request.resolver_match.namespace == 'organization' and request.resolver_match.url_name == 'areas' %}active{% endif %}"><i class="bi bi-diagram-3"></i><span>Áreas</span></a>
-    <a href="{% url 'organization:careers' %}" class="sidebar-link {% if request.resolver_match.namespace == 'organization' and request.resolver_match.url_name == 'careers' %}active{% endif %}"><i class="bi bi-book"></i><span>Carreras</span></a>
-    <a href="{% url 'accounts:user-create' %}" class="sidebar-link {% if request.resolver_match.namespace == 'accounts' %}active{% endif %}"><i class="bi bi-people"></i><span>Usuarios</span></a>
+    <a href="{% url 'dashboard:home' %}" class="sidebar-link {% if request.resolver_match.namespace == 'dashboard' %}active{% endif %}">
+      <i class="bi bi-speedometer2"></i>
+      <span>Panel de control</span>
+    </a>
+
+    <a href="{% url 'cases:list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'cases' and request.resolver_match.url_name != 'pending-area' %}active{% endif %}">
+      <i class="bi bi-journals"></i>
+      <span>Casos</span>
+    </a>
+
+    <a href="{% url 'cases:pending-area' %}" class="sidebar-link {% if request.resolver_match.namespace == 'cases' and request.resolver_match.url_name == 'pending-area' %}active{% endif %}">
+      <i class="bi bi-hourglass-split"></i>
+      <span>Pendientes de mi área</span>
+    </a>
+
+    <a href="{% url 'students:list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'students' %}active{% endif %}">
+      <i class="bi bi-mortarboard"></i>
+      <span>Estudiantes</span>
+    </a>
+
+    <a href="{% url 'cases:category-list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'cases' and 'category' in request.resolver_match.url_name or request.resolver_match.url_name == 'subcategory-create' %}active{% endif %}">
+      <i class="bi bi-tags"></i>
+      <span>Categorías</span>
+    </a>
+
+    <a href="{% url 'organization:areas' %}" class="sidebar-link {% if request.resolver_match.namespace == 'organization' and request.resolver_match.url_name == 'areas' %}active{% endif %}">
+      <i class="bi bi-diagram-3"></i>
+      <span>Áreas</span>
+    </a>
+
+    <a href="{% url 'organization:careers' %}" class="sidebar-link {% if request.resolver_match.namespace == 'organization' and request.resolver_match.url_name == 'careers' %}active{% endif %}">
+      <i class="bi bi-book"></i>
+      <span>Carreras</span>
+    </a>
+
+    <a href="{% url 'accounts:user-create' %}" class="sidebar-link {% if request.resolver_match.namespace == 'accounts' %}active{% endif %}">
+      <i class="bi bi-people"></i>
+      <span>Usuarios</span>
+    </a>
   </nav>
 
   <form method="post" action="{% url 'logout' %}" class="sidebar-logout mt-3">

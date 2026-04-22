@@ -1,19 +1,33 @@
 <nav class="navbar navbar-expand-lg app-navbar px-3 px-lg-4">
-  <div class="d-flex align-items-center gap-2">
-    <button class="btn btn-link nav-toggle d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar" aria-controls="mobileSidebar" aria-label="Abrir menú">
-      <i class="bi bi-list"></i>
-    </button>
-    <a class="navbar-brand app-brand" href="{% url 'dashboard:home' %}">
-      <span class="app-brand-mark"><i class="bi bi-building"></i></span>
-      <span>
-        <strong>Trazabilidad Institucional</strong>
-        <small>Atenciones Estudiantiles</small>
-      </span>
-    </a>
-  </div>
+  <div class="container-fluid px-0">
+    <div class="d-flex align-items-center gap-2">
+      <button
+        class="btn btn-link nav-toggle d-lg-none"
+        type="button"
+        data-bs-toggle="offcanvas"
+        data-bs-target="#mobileSidebar"
+        aria-controls="mobileSidebar"
+        aria-label="Abrir menú"
+      >
+        <i class="bi bi-list"></i>
+      </button>
 
-  <div class="ms-auto d-flex align-items-center gap-2 user-chip">
-    <i class="bi bi-person-circle"></i>
-    <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+      <a class="navbar-brand app-brand me-0" href="{% url 'dashboard:home' %}">
+        <span class="app-brand-mark">
+          <i class="bi bi-buildings"></i>
+        </span>
+        <span class="app-brand-text">
+          <strong>Trazabilidad Institucional</strong>
+          <small>Atenciones Estudiantiles</small>
+        </span>
+      </a>
+    </div>
+
+    <div class="ms-auto">
+      <div class="user-chip">
+        <i class="bi bi-person-circle"></i>
+        <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+      </div>
+    </div>
   </div>
 </nav>
