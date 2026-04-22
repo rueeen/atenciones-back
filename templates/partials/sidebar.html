@@ -25,6 +25,14 @@
       <span>Pendientes de mi área</span>
     </a>
 
+
+    {% if can_access_psychopedagogy_module %}
+    <a href="{% url 'psychopedagogy:list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'psychopedagogy' %}active{% endif %}">
+      <i class="bi bi-shield-lock"></i>
+      <span>Psicopedagogía</span>
+    </a>
+    {% endif %}
+
     <a href="{% url 'students:list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'students' %}active{% endif %}">
       <i class="bi bi-mortarboard"></i>
       <span>Estudiantes</span>
