@@ -1,23 +1,288 @@
 {% extends 'base.html' %}
 {% load crispy_forms_tags %}
+
 {% block content %}
 <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
   <div>
     <h2>Nueva ficha psicopedagógica</h2>
     <p class="page-subtitle">Registra el inicio de acompañamiento especializado.</p>
   </div>
-  <a class="btn btn-soft" href="{% url 'psychopedagogy:list' %}"><i class="bi bi-arrow-left me-1"></i>Volver</a>
+  <a class="btn btn-soft" href="{% url 'psychopedagogy:list' %}">
+    <i class="bi bi-arrow-left me-1"></i>Volver
+  </a>
 </div>
 
 <div class="card">
   <div class="card-body">
     <form method="post">
       {% csrf_token %}
-      {{ form|crispy }}
-      <div class="d-flex justify-content-end mt-3">
-        <button class="btn btn-main" type="submit"><i class="bi bi-save me-1"></i>Guardar ficha</button>
+
+      {{ form.student }}
+
+      <div class="mb-4">
+        <label class="form-label">Estudiante</label>
+
+        <div class="card border-0 bg-light-subtle">
+          <div class="card-body">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-6">
+                <label for="student-rut-search" class="form-label">Buscar por RUT</label>
+                <input
+                  type="text"
+                  id="student-rut-search"
+                  class="form-control"
+                  placeholder="12.345.678-9"
+                >
+              </div>
+
+              <div class="col-md-auto">
+                <button type="button" class="btn btn-soft w-100" id="btn-search-student">
+                  <i class="bi bi-search me-1"></i>Buscar
+                </button>
+              </div>
+
+              <div class="col-md-auto">
+                <button type="button" class="btn btn-main w-100" id="btn-open-student-modal">
+                  <i class="bi bi-person-plus me-1"></i>Crear estudiante
+                </button>
+              </div>
+            </div>
+
+            <div id="student-search-result" class="mt-3"></div>
+
+            {% if form.student.errors %}
+              <div class="text-danger small mt-2">
+                {{ form.student.errors|join:", " }}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          {{ form.responsible_tutor|as_crispy_field }}
+        </div>
+        <div class="col-md-6">
+          {{ form.status|as_crispy_field }}
+        </div>
+
+        <div class="col-md-6">
+          {{ form.start_date|as_crispy_field }}
+        </div>
+        <div class="col-md-6">
+          {{ form.end_date|as_crispy_field }}
+        </div>
+
+        <div class="col-md-6">
+          {{ form.support_category|as_crispy_field }}
+        </div>
+        <div class="col-md-6">
+          {{ form.is_confidential|as_crispy_field }}
+        </div>
+
+        <div class="col-12">
+          {{ form.support_reason|as_crispy_field }}
+        </div>
+
+        <div class="col-12">
+          {{ form.background_notes|as_crispy_field }}
+        </div>
+
+        <div class="col-12">
+          {{ form.summary|as_crispy_field }}
+        </div>
+
+        <div class="col-12">
+          {{ form.observations|as_crispy_field }}
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end mt-4">
+        <button class="btn btn-main" type="submit">
+          <i class="bi bi-save me-1"></i>Guardar ficha
+        </button>
       </div>
     </form>
   </div>
 </div>
+
+<div class="modal fade" id="studentCreateModal" tabindex="-1" aria-labelledby="studentCreateModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="studentCreateModalLabel">Crear estudiante</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+      </div>
+      <div class="modal-body" id="student-create-form-container">
+        <div class="text-center py-4 text-muted">
+          Cargando formulario...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const studentSelect = document.getElementById('id_student');
+  const rutSearchInput = document.getElementById('student-rut-search');
+  const searchButton = document.getElementById('btn-search-student');
+  const resultContainer = document.getElementById('student-search-result');
+  const openModalButton = document.getElementById('btn-open-student-modal');
+  const studentModalElement = document.getElementById('studentCreateModal');
+  const studentModal = new bootstrap.Modal(studentModalElement);
+  const studentFormContainer = document.getElementById('student-create-form-container');
+
+  function renderSelectedStudent(student) {
+    resultContainer.innerHTML = `
+      <div class="alert alert-success d-flex justify-content-between align-items-center mb-0">
+        <div>
+          <strong>Estudiante seleccionado:</strong><br>
+          ${student.full_name} (${student.rut})
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-selected-student">
+          Cambiar
+        </button>
+      </div>
+    `;
+
+    const clearBtn = document.getElementById('clear-selected-student');
+    clearBtn.addEventListener('click', function () {
+      studentSelect.value = '';
+      resultContainer.innerHTML = '';
+      rutSearchInput.value = '';
+    });
+  }
+
+  async function searchStudentByRut() {
+    const rut = rutSearchInput.value.trim();
+
+    if (!rut) {
+      resultContainer.innerHTML = `
+        <div class="alert alert-warning mb-0">
+          Ingrese un RUT para buscar.
+        </div>
+      `;
+      return;
+    }
+
+    resultContainer.innerHTML = `
+      <div class="text-muted small">Buscando estudiante...</div>
+    `;
+
+    try {
+      const response = await fetch(`{% url 'students:by_rut' %}?rut=${encodeURIComponent(rut)}`);
+      const data = await response.json();
+
+      if (data.found) {
+        studentSelect.value = data.id;
+        renderSelectedStudent({
+          id: data.id,
+          full_name: data.full_name,
+          rut: data.rut
+        });
+      } else {
+        resultContainer.innerHTML = `
+          <div class="alert alert-warning d-flex justify-content-between align-items-center mb-0">
+            <div>No se encontró un estudiante con ese RUT.</div>
+            <button type="button" class="btn btn-sm btn-main" id="btn-create-from-search">
+              Crear estudiante
+            </button>
+          </div>
+        `;
+
+        document.getElementById('btn-create-from-search').addEventListener('click', async function () {
+          await loadStudentCreateForm();
+          const rutField = studentFormContainer.querySelector('#id_rut');
+          if (rutField) {
+            rutField.value = rut;
+          }
+          studentModal.show();
+        });
+      }
+    } catch (error) {
+      resultContainer.innerHTML = `
+        <div class="alert alert-danger mb-0">
+          Ocurrió un error al buscar el estudiante.
+        </div>
+      `;
+    }
+  }
+
+  async function loadStudentCreateForm() {
+    studentFormContainer.innerHTML = `
+      <div class="text-center py-4 text-muted">Cargando formulario...</div>
+    `;
+
+    const response = await fetch("{% url 'students:modal_create' %}");
+    const data = await response.json();
+    studentFormContainer.innerHTML = data.html;
+
+    bindStudentCreateForm();
+  }
+
+  function bindStudentCreateForm() {
+    const form = document.getElementById('student-create-form');
+    if (!form) return;
+
+    form.addEventListener('submit', async function (event) {
+      event.preventDefault();
+
+      const formData = new FormData(form);
+
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          let option = Array.from(studentSelect.options).find(opt => opt.value === String(data.id));
+
+          if (!option) {
+            option = document.createElement('option');
+            option.value = data.id;
+            option.textContent = data.label;
+            studentSelect.appendChild(option);
+          }
+
+          studentSelect.value = data.id;
+          rutSearchInput.value = data.rut;
+          renderSelectedStudent({
+            id: data.id,
+            full_name: data.full_name,
+            rut: data.rut,
+          });
+
+          studentModal.hide();
+        } else {
+          studentFormContainer.innerHTML = data.html;
+          bindStudentCreateForm();
+        }
+      } catch (error) {
+        studentFormContainer.innerHTML = `
+          <div class="alert alert-danger mb-0">
+            Ocurrió un error al guardar el estudiante.
+          </div>
+        `;
+      }
+    });
+  }
+
+  searchButton.addEventListener('click', searchStudentByRut);
+
+  rutSearchInput.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      searchStudentByRut();
+    }
+  });
+
+  openModalButton.addEventListener('click', async function () {
+    await loadStudentCreateForm();
+    studentModal.show();
+  });
+</script>
 {% endblock %}
