@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     'students',
     'cases',
     'dashboard',
+    'psychopedagogy',
     'crispy_forms',
     'crispy_bootstrap5',
 ]
@@ -46,6 +47,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'psychopedagogy.context_processors.psychopedagogy_access',
             ],
         },
     },

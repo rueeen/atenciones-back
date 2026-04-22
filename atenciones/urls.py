@@ -13,6 +13,7 @@ urlpatterns = [
     path('organization/', include('organization.urls')),
     path('students/', include('students.urls')),
     path('cases/', include('cases.urls')),
+    path('psychopedagogy/', include('psychopedagogy.urls')),
 ]
 
 if settings.DEBUG:
