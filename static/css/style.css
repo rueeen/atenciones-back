@@ -44,6 +44,8 @@ body {
 
 .app-layout {
   min-height: calc(100vh - 64px);
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .app-main {
@@ -385,6 +387,7 @@ body {
 .btn-primary {
   background: var(--c-primary);
   border-color: var(--c-primary);
+  color: #ffffff;
 }
 
 .btn-main:hover,
@@ -393,6 +396,7 @@ body {
 .btn-primary:focus-visible {
   background: var(--c-primary-strong);
   border-color: var(--c-primary-strong);
+  color: #ffffff;
 }
 
 .btn-soft {
