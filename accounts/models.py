@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 
 
@@ -28,10 +29,8 @@ class UserProfile(models.Model):
         blank=True,
         related_name='profiles'
     )
-    career = models.ForeignKey(
+    careers = models.ManyToManyField(
         'organization.Career',
-        on_delete=models.SET_NULL,
-        null=True,
         blank=True,
         related_name='profiles'
     )
@@ -43,3 +42,28 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f'{self.user.get_full_name() or self.user.username} - {self.get_role_display()}'
+
+    @property
+    def is_academic_role(self):
+        return self.role in {
+            self.Role.CAREER_DIRECTOR,
+            self.Role.CAREER_COORDINATOR,
+        }
+
+    def clean(self):
+        errors = {}
+
+        if self.academic_area and self.academic_area.area_id != self.area_id:
+            errors['academic_area'] = 'El área académica debe pertenecer al área general seleccionada.'
+
+        if not self.is_academic_role and self.academic_area_id:
+            errors['academic_area'] = 'Solo los roles académicos pueden tener área académica.'
+
+        if self.pk and not self.is_academic_role and self.careers.exists():
+            errors['careers'] = 'Solo los roles académicos pueden tener carreras asociadas.'
+
+        if self.pk and self.academic_area_id and self.careers.exclude(academic_area_id=self.academic_area_id).exists():
+            errors['careers'] = 'Todas las carreras deben pertenecer al área académica seleccionada.'
+
+        if errors:
+            raise ValidationError(errors)
