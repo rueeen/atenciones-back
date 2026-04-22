@@ -20,14 +20,15 @@ class UserCreateView(LoginRequiredMixin, AdminOnlyMixin, View):
 
     def post(self, request):
         form = UserCreateForm(request.POST)
-        profile_form = UserProfileForm(request.POST)
-        if form.is_valid() and profile_form.is_valid():
+        if form.is_valid():
             user = User.objects.create_user(**form.cleaned_data)
-            profile = user.profile
-            for field, value in profile_form.cleaned_data.items():
-                setattr(profile, field, value)
-            profile.save()
-            messages.success(request, 'Usuario creado correctamente.')
-            return redirect('accounts:user-create')
+            profile_form = UserProfileForm(request.POST, instance=user.profile)
+            if profile_form.is_valid():
+                profile_form.save()
+                messages.success(request, 'Usuario creado correctamente.')
+                return redirect('accounts:user-create')
+            user.delete()
+        else:
+            profile_form = UserProfileForm(request.POST)
         messages.error(request, 'Revise los datos del formulario.')
         return render(request, self.template_name, {'form': form, 'profile_form': profile_form})
