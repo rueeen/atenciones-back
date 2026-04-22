@@ -1,2 +1,19 @@
 {% extends 'base.html' %}
-{% block content %}<h2>Carreras</h2><ul class="list-group">{% for c in careers %}<li class="list-group-item">{{ c.name }} - {{ c.academic_area.name }}</li>{% endfor %}</ul>{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h2>Carreras</h2>
+  <p class="page-subtitle">Oferta académica asociada a cada área.</p>
+</div>
+<div class="card">
+  <ul class="list-group list-group-flush">
+    {% for c in careers %}
+    <li class="list-group-item d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <span><i class="bi bi-book text-muted me-2"></i>{{ c.name }}</span>
+      <span class="badge text-bg-light border">{{ c.academic_area.name }}</span>
+    </li>
+    {% empty %}
+    <li class="list-group-item text-muted">Sin carreras registradas.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

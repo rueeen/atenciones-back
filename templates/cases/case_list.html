@@ -1,13 +1,40 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h2>Casos</h2><a class="btn btn-main" href="{% url 'cases:create' %}">Nuevo caso</a>
+<div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+  <div>
+    <h2>Casos</h2>
+    <p class="page-subtitle">Listado y seguimiento de solicitudes estudiantiles.</p>
+  </div>
+  <a class="btn btn-main" href="{% url 'cases:create' %}"><i class="bi bi-plus-lg me-1"></i>Nuevo caso</a>
 </div>
-<form method="get" class="row g-2 mb-3">
-  <div class="col-md-4"><input class="form-control" name="q" placeholder="Folio, estudiante, RUT" value="{{ request.GET.q }}"></div>
-  <div class="col-md-2"><button class="btn btn-outline-dark w-100">Buscar</button></div>
+
+<form method="get" class="card card-body mb-3">
+  <div class="row g-2 align-items-end">
+    <div class="col-md-8 col-lg-6">
+      <label class="form-label" for="q">Buscar caso</label>
+      <input id="q" class="form-control" name="q" placeholder="Folio, estudiante o RUT" value="{{ request.GET.q }}">
+    </div>
+    <div class="col-md-4 col-lg-2">
+      <button class="btn btn-soft w-100"><i class="bi bi-search me-1"></i>Buscar</button>
+    </div>
+  </div>
 </form>
-<div class="card"><div class="table-responsive"><table class="table app-table mb-0"><thead><tr><th>Folio</th><th>Título</th><th>Estudiante</th><th>Área</th><th>Estado</th><th></th></tr></thead>
-<tbody>{% for case in cases %}<tr><td>{{ case.folio }}</td><td>{{ case.title }}</td><td>{{ case.student.full_name }}</td><td>{{ case.current_area }}</td><td><span class="badge bg-status">{{ case.get_status_display }}</span></td><td><a href="{% url 'cases:detail' case.pk %}">Ver</a></td></tr>{% empty %}<tr><td colspan="6">No hay casos.</td></tr>{% endfor %}</tbody>
-</table></div></div>
+
+<div class="card">
+  <div class="table-responsive">
+    <table class="table app-table">
+      <thead><tr><th>Folio</th><th>Título</th><th>Estudiante</th><th>Área</th><th>Estado</th><th>Acciones</th></tr></thead>
+      <tbody>
+      {% for case in cases %}
+      <tr>
+        <td class="fw-semibold">{{ case.folio }}</td><td>{{ case.title }}</td><td>{{ case.student.full_name }}</td><td>{{ case.current_area }}</td><td><span class="badge bg-status">{{ case.get_status_display }}</span></td>
+        <td><a href="{% url 'cases:detail' case.pk %}" class="btn btn-sm btn-soft"><i class="bi bi-eye me-1"></i>Ver</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6" class="text-center text-muted py-4">No hay casos.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
 {% endblock %}

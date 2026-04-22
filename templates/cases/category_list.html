@@ -1,7 +1,22 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Categorías</h2>
-<a class="btn btn-main mb-2" href="{% url 'cases:category-create' %}">Nueva categoría</a>
-<a class="btn btn-main mb-2" href="{% url 'cases:subcategory-create' %}">Nueva subcategoría</a>
-<ul class="list-group">{% for c in categories %}<li class="list-group-item">{{ c.name }}</li>{% endfor %}</ul>
+<div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
+  <div>
+    <h2>Categorías</h2>
+    <p class="page-subtitle">Clasificación institucional para los casos.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-main" href="{% url 'cases:category-create' %}"><i class="bi bi-plus-lg me-1"></i>Nueva categoría</a>
+    <a class="btn btn-soft" href="{% url 'cases:subcategory-create' %}"><i class="bi bi-plus-lg me-1"></i>Nueva subcategoría</a>
+  </div>
+</div>
+<div class="card">
+  <ul class="list-group list-group-flush">
+    {% for c in categories %}
+    <li class="list-group-item"><i class="bi bi-tag text-muted me-2"></i>{{ c.name }}</li>
+    {% empty %}
+    <li class="list-group-item text-muted">Sin categorías.</li>
+    {% endfor %}
+  </ul>
+</div>
 {% endblock %}
