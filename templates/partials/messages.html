@@ -1,5 +1,12 @@
 {% if messages %}
-  {% for message in messages %}
-    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
-  {% endfor %}
+  <script id="django-messages-data" type="application/json">
+    [
+      {% for message in messages %}
+        {
+          "message": "{{ message|escapejs }}",
+          "tags": "{{ message.tags|default:''|escapejs }}"
+        }{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ]
+  </script>
 {% endif %}

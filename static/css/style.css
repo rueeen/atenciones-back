@@ -466,3 +466,13 @@ body {
     transform: none;
   }
 }
+
+#notyf {
+  z-index: 1200;
+}
+
+div.dt-container div.dt-search input,
+div.dt-container div.dt-length select {
+  border-radius: 0.5rem;
+  border-color: var(--c-border);
+}
