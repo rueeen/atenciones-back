@@ -38,7 +38,7 @@
       <span>Estudiantes</span>
     </a>
 
-    {% if request.user.profile.role == 'admin' or request.user.profile.role == 'supervisor' %}
+    {% if request.user.is_superuser or request.user.profile.role == 'vrs' or request.user.profile.role == 'dac' or request.user.profile.role == 'dae' or request.user.profile.role == 'subdirector' %}
       <a href="{% url 'cases:category-list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'cases' and 'category' in request.resolver_match.url_name or request.resolver_match.url_name == 'subcategory-create' %}active{% endif %}">
         <i class="bi bi-tags"></i>
         <span>Categorías</span>

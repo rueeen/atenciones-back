@@ -24,7 +24,7 @@ class UserProfileForm(forms.ModelForm):
         fields = ['area', 'role', 'academic_area', 'careers']
         labels = {
             'area': 'Área',
-            'role': 'Rol',
+            'role': 'Cargo',
             'academic_area': 'Área académica',
             'careers': 'Carreras',
         }
@@ -37,8 +37,10 @@ class UserProfileForm(forms.ModelForm):
         careers = cleaned_data.get('careers')
 
         academic_roles = {
-            UserProfile.Role.CAREER_DIRECTOR,
-            UserProfile.Role.CAREER_COORDINATOR,
+            UserProfile.Role.DC,
+            UserProfile.Role.CC,
+            UserProfile.Role.CURRICULAR_HEAD,
+            UserProfile.Role.CURRICULAR_ASSISTANT,
         }
 
         if academic_area and area and academic_area.area_id != area.id:
@@ -46,9 +48,9 @@ class UserProfileForm(forms.ModelForm):
 
         if role not in academic_roles:
             if academic_area:
-                self.add_error('academic_area', 'Este rol no debe tener área académica.')
+                self.add_error('academic_area', 'Este cargo no debe tener área académica.')
             if careers:
-                self.add_error('careers', 'Este rol no debe tener carreras asociadas.')
+                self.add_error('careers', 'Este cargo no debe tener carreras asociadas.')
         elif careers and academic_area and careers.exclude(academic_area=academic_area).exists():
             self.add_error('careers', 'Todas las carreras deben pertenecer al área académica seleccionada.')
 

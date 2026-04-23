@@ -9,6 +9,7 @@ from django.views import View
 from django.views.generic import CreateView, DetailView, ListView, UpdateView
 
 from accounts.services import can_close_case, can_manage_case, can_transfer_or_reassign, visible_cases_for
+from cases.services import is_category_allowed_for_user, user_can_create_cases
 from cases.forms import (
     CaseAttachmentForm,
     CaseCloseForm,
@@ -58,6 +59,12 @@ class CaseCreateView(LoginRequiredMixin, CreateView):
     template_name = 'cases/case_form.html'
     success_url = reverse_lazy('cases:list')
 
+    def dispatch(self, request, *args, **kwargs):
+        if not user_can_create_cases(request.user):
+            messages.error(request, 'No tiene permisos para crear casos.')
+            return redirect('cases:list')
+        return super().dispatch(request, *args, **kwargs)
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
@@ -67,6 +74,10 @@ class CaseCreateView(LoginRequiredMixin, CreateView):
         profile = getattr(self.request.user, 'profile', None)
         if not profile or not profile.area:
             form.add_error(None, 'Tu usuario no tiene área configurada. Contacta al administrador.')
+            return self.form_invalid(form)
+
+        if not is_category_allowed_for_user(self.request.user, form.cleaned_data.get('category')):
+            form.add_error('category', 'No tienes permisos para crear casos con esta categoría.')
             return self.form_invalid(form)
 
         form.instance.created_by = self.request.user
@@ -110,10 +121,17 @@ class CaseCreateView(LoginRequiredMixin, CreateView):
 
 def load_subcategories(request):
     category_id = request.GET.get('category_id')
-    subcategories = CaseSubcategory.objects.filter(
-        category_id=category_id
-    ).order_by('name').values('id', 'name')
-    return JsonResponse(list(subcategories), safe=False)
+    subcategories = CaseSubcategory.objects.none()
+
+    if category_id and request.user.is_authenticated:
+        try:
+            category = CaseCategory.objects.get(pk=category_id)
+            if is_category_allowed_for_user(request.user, category):
+                subcategories = CaseSubcategory.objects.filter(category=category).order_by('name')
+        except (CaseCategory.DoesNotExist, ValueError, TypeError):
+            subcategories = CaseSubcategory.objects.none()
+
+    return JsonResponse(list(subcategories.values('id', 'name')), safe=False)
 
 
 class CaseDetailView(LoginRequiredMixin, DetailView):
@@ -152,6 +170,12 @@ class CaseUpdateView(LoginRequiredMixin, UpdateView):
     model = Case
     form_class = CaseForm
     template_name = 'cases/case_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        kwargs['enforce_category_permissions'] = False
+        return kwargs
 
     def get_success_url(self):
         return reverse_lazy('cases:detail', kwargs={'pk': self.object.pk})

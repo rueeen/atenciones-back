@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from django.urls import reverse_lazy
 from cases.models import Case, CaseAttachment, CaseCategory, CaseComment, CaseSubcategory, CaseTransfer
+from cases.services import get_allowed_categories_for_user, is_category_allowed_for_user
 
 
 class DateInput(forms.DateInput):
@@ -61,6 +62,8 @@ class CaseForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
+        self.enforce_category_permissions = kwargs.pop('enforce_category_permissions', True)
+        self.user = user
         super().__init__(*args, **kwargs)
 
         self.fields['subcategory'].queryset = CaseSubcategory.objects.none()
@@ -87,6 +90,8 @@ class CaseForm(forms.ModelForm):
 
         if user:
             self.fields['student'].queryset = self.fields['student'].queryset.select_related()
+            if self.enforce_category_permissions:
+                self.fields['category'].queryset = get_allowed_categories_for_user(user)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -94,8 +99,10 @@ class CaseForm(forms.ModelForm):
         subcategory = cleaned_data.get('subcategory')
 
         if subcategory and category and subcategory.category_id != category.id:
-            self.add_error(
-                'subcategory', 'La subcategoría no pertenece a la categoría seleccionada.')
+            self.add_error('subcategory', 'La subcategoría no pertenece a la categoría seleccionada.')
+
+        if self.enforce_category_permissions and category and self.user and not is_category_allowed_for_user(self.user, category):
+            self.add_error('category', 'No tienes permisos para crear casos con esta categoría.')
 
         return cleaned_data
 

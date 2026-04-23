@@ -19,7 +19,7 @@ class UserProfileFormValidationTest(TestCase):
     def test_non_academic_role_cannot_have_academic_scope(self):
         form = UserProfileForm(data={
             'area': self.daf.id,
-            'role': UserProfile.Role.STAFF,
+            'role': UserProfile.Role.TECHNICAL_OPERATOR,
             'academic_area': self.academic_area.id,
             'careers': [self.career.id],
         })
@@ -43,7 +43,7 @@ class AcademicVisibilityRulesTest(TestCase):
         self.category = CaseCategory.objects.create(name='Académico')
         self.user = User.objects.create_user('director', password='test123')
         profile = self.user.profile
-        profile.role = UserProfile.Role.CAREER_DIRECTOR
+        profile.role = UserProfile.Role.DC
         profile.area = self.dac
         profile.academic_area = self.academic_area
         profile.save()
