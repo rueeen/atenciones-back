@@ -14,6 +14,11 @@ from psychopedagogy.forms import (
     PsychopedagogyRecordForm,
 )
 from psychopedagogy.models import PsychopedagogyAttachment, PsychopedagogyLogEntry
+from notifications.services import (
+    notify_psychopedagogy_attachment_added,
+    notify_psychopedagogy_log_created,
+    notify_psychopedagogy_record_created,
+)
 from psychopedagogy.services import (
     can_access_psychopedagogy_module,
     can_edit_psychopedagogy_record,
@@ -96,6 +101,7 @@ class PsychopedagogyRecordCreateView(InclusionLogCreatePermissionMixin, Psychope
                 'Ya existe una ficha psicopedagógica activa para este estudiante.',
             )
             return self.form_invalid(form)
+        notify_psychopedagogy_record_created(self.object)
         messages.success(
             self.request, 'Ficha psicopedagógica creada correctamente.')
         return response
@@ -116,6 +122,7 @@ class PsychopedagogyLogEntryCreateView(InclusionLogCreatePermissionMixin, Psycho
             entry.record = record
             entry.author = request.user
             entry.save()
+            notify_psychopedagogy_log_created(entry)
             messages.success(
                 request, 'Entrada de bitácora agregada correctamente.')
         else:
@@ -139,6 +146,7 @@ class PsychopedagogyAttachmentCreateView(PsychopedagogyModuleAccessMixin, View):
             attachment.record = record
             attachment.uploaded_by = request.user
             attachment.save()
+            notify_psychopedagogy_attachment_added(attachment)
             messages.success(
                 self.request, 'Archivo adjunto cargado correctamente.')
         else:

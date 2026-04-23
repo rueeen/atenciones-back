@@ -22,6 +22,14 @@ from cases.forms import (
     SubcategoryForm,
 )
 from cases.models import Case, CaseAttachment, CaseCategory, CaseComment, CaseHistory, CaseSubcategory, CaseTransfer
+from notifications.services import (
+    notify_case_assigned,
+    notify_case_attachment_added,
+    notify_case_closed,
+    notify_case_comment_added,
+    notify_case_created,
+    notify_case_transferred,
+)
 
 
 class CaseListView(LoginRequiredMixin, ListView):
@@ -103,6 +111,8 @@ class CaseCreateView(LoginRequiredMixin, CreateView):
             actor=self.request.user,
         )
 
+        notify_case_created(self.object)
+
         if self.object.status == Case.Status.CLOSED:
             CaseHistory.objects.create(
                 case=self.object,
@@ -110,6 +120,7 @@ class CaseCreateView(LoginRequiredMixin, CreateView):
                 description='Caso cerrado al momento de su creación.',
                 actor=self.request.user,
             )
+            notify_case_closed(self.object)
             messages.success(
                 self.request, f'Caso {self.object.folio} creado y cerrado correctamente.')
         else:
@@ -234,6 +245,8 @@ class CaseTransferView(LoginRequiredMixin, View):
                     description=description,
                     actor=request.user,
                 )
+
+                notify_case_transferred(case, transfer, previous_assignee=previous_assignee)
             messages.success(request, 'Caso derivado correctamente.')
         else:
             errors = ' '.join(form.non_field_errors())
@@ -284,13 +297,14 @@ class CaseTakeView(LoginRequiredMixin, View):
                 description=f'Caso tomado por {request.user}. Responsable actual actualizado.',
                 actor=request.user,
             )
+            notify_case_assigned(case, actor=request.user)
         messages.success(request, 'Tomaste el caso correctamente.')
         return redirect('cases:detail', pk=pk)
 
 
 class CaseReassignView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        case = get_object_or_404(Case, pk=pk)
+        case = get_object_or_404(visible_cases_for(request.user), pk=pk)
         if not can_transfer_or_reassign(request.user):
             messages.error(request, 'No tiene permisos para reasignar casos.')
             return redirect('cases:detail', pk=pk)
@@ -304,6 +318,7 @@ class CaseReassignView(LoginRequiredMixin, View):
                 description=f'Responsable cambiado de {old_assignee or "Sin asignar"} a {case.current_assignee or "Sin asignar"}.',
                 actor=request.user,
             )
+            notify_case_assigned(case, actor=request.user)
             messages.success(request, 'Caso reasignado correctamente.')
         else:
             messages.error(request, 'No fue posible reasignar el caso.')
@@ -312,7 +327,7 @@ class CaseReassignView(LoginRequiredMixin, View):
 
 class CaseCommentCreateView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        case = get_object_or_404(Case, pk=pk)
+        case = get_object_or_404(visible_cases_for(request.user), pk=pk)
         form = CaseCommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
@@ -325,6 +340,7 @@ class CaseCommentCreateView(LoginRequiredMixin, View):
                 description='Se agregó un comentario interno.' if comment.is_internal else 'Se agregó comentario.',
                 actor=request.user,
             )
+            notify_case_comment_added(comment)
             messages.success(request, 'Comentario agregado.')
         else:
             messages.error(request, 'Comentario inválido.')
@@ -333,7 +349,7 @@ class CaseCommentCreateView(LoginRequiredMixin, View):
 
 class CaseAttachmentCreateView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        case = get_object_or_404(Case, pk=pk)
+        case = get_object_or_404(visible_cases_for(request.user), pk=pk)
         form = CaseAttachmentForm(request.POST, request.FILES)
         if form.is_valid():
             attachment = form.save(commit=False)
@@ -346,6 +362,7 @@ class CaseAttachmentCreateView(LoginRequiredMixin, View):
                 description=f'Adjunto agregado: {attachment.file.name.split("/")[-1]}',
                 actor=request.user,
             )
+            notify_case_attachment_added(attachment)
             messages.success(request, 'Adjunto cargado correctamente.')
         else:
             messages.error(
@@ -355,7 +372,7 @@ class CaseAttachmentCreateView(LoginRequiredMixin, View):
 
 class CaseCloseView(LoginRequiredMixin, View):
     def post(self, request, pk):
-        case = get_object_or_404(Case, pk=pk)
+        case = get_object_or_404(visible_cases_for(request.user), pk=pk)
         if not can_close_case(request.user):
             messages.error(request, 'No tiene permisos para cerrar casos.')
             return redirect('cases:detail', pk=pk)
@@ -368,6 +385,7 @@ class CaseCloseView(LoginRequiredMixin, View):
                 description=f'Caso cerrado con estado {case.get_status_display()}.',
                 actor=request.user,
             )
+            notify_case_closed(case)
             messages.success(request, 'Caso cerrado correctamente.')
         else:
             messages.error(

@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'cases',
     'dashboard',
     'psychopedagogy',
+    'notifications',
     'crispy_forms',
     'crispy_bootstrap5',
 ]
@@ -48,6 +49,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'psychopedagogy.context_processors.psychopedagogy_access',
+                'notifications.context_processors.unread_notifications',
             ],
         },
     },
