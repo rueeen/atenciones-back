@@ -1,17 +1,11 @@
+from django import forms
+from django.contrib.auth.models import User
+
 from psychopedagogy.models import (
     PsychopedagogyAttachment,
     PsychopedagogyLogEntry,
     PsychopedagogyRecord,
 )
-from psychopedagogy.models import PsychopedagogyRecord
-from django import forms
-from django.contrib.auth.models import User
-
-from psychopedagogy.models import PsychopedagogyAttachment, PsychopedagogyLogEntry, PsychopedagogyRecord
-
-
-class DateInput(forms.DateInput):
-    input_type = 'date'
 
 
 class DateInput(forms.DateInput):
@@ -52,18 +46,10 @@ class PsychopedagogyRecordForm(forms.ModelForm):
                 'class': 'form-select d-none',
                 'id': 'id_student',
             }),
-            'responsible_tutor': forms.Select(attrs={
-                'class': 'form-select',
-            }),
-            'status': forms.Select(attrs={
-                'class': 'form-select',
-            }),
-            'start_date': DateInput(attrs={
-                'class': 'form-control',
-            }),
-            'end_date': DateInput(attrs={
-                'class': 'form-control',
-            }),
+            'responsible_tutor': forms.Select(attrs={'class': 'form-select'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'start_date': DateInput(attrs={'class': 'form-control'}),
+            'end_date': DateInput(attrs={'class': 'form-control'}),
             'support_category': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Ej.: apoyo académico, acompañamiento emocional, seguimiento',
@@ -91,6 +77,7 @@ class PsychopedagogyRecordForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.fields['student'].help_text = 'Seleccione un estudiante desde el buscador.'
         self.fields['end_date'].required = False
@@ -99,18 +86,14 @@ class PsychopedagogyRecordForm(forms.ModelForm):
         self.fields['summary'].required = False
         self.fields['observations'].required = False
 
+        if user:
+            self.fields['responsible_tutor'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
+
 
 class PsychopedagogyLogEntryForm(forms.ModelForm):
     class Meta:
         model = PsychopedagogyLogEntry
-        fields = [
-            'entry_date',
-            'entry_type',
-            'title',
-            'content',
-            'agreements',
-            'next_follow_up',
-        ]
+        fields = ['entry_date', 'entry_type', 'title', 'content', 'agreements', 'next_follow_up']
         widgets = {
             'entry_date': DateInput(attrs={'class': 'form-control'}),
             'entry_type': forms.Select(attrs={'class': 'form-select'}),
@@ -128,27 +111,8 @@ class PsychopedagogyAttachmentForm(forms.ModelForm):
         widgets = {
             'attachment_type': forms.Select(attrs={'class': 'form-select'}),
             'file': forms.ClearableFileInput(attrs={'class': 'form-control'}),
-            'note': forms.TextInput(attrs={'class': 'form-control'}),
-        }
-
-
-class PsychopedagogyLogEntryForm(forms.ModelForm):
-    class Meta:
-        model = PsychopedagogyLogEntry
-        fields = ['entry_date', 'entry_type', 'title',
-                  'content', 'agreements', 'next_follow_up']
-        widgets = {
-            'entry_date': DateInput(attrs={'class': 'form-control'}),
-            'next_follow_up': DateInput(attrs={'class': 'form-control'}),
-            'content': forms.Textarea(attrs={'rows': 4}),
-            'agreements': forms.Textarea(attrs={'rows': 3}),
-        }
-
-
-class PsychopedagogyAttachmentForm(forms.ModelForm):
-    class Meta:
-        model = PsychopedagogyAttachment
-        fields = ['attachment_type', 'file', 'note']
-        widgets = {
-            'note': forms.TextInput(attrs={'placeholder': 'Observación breve del documento'}),
+            'note': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Observación breve del documento',
+            }),
         }
