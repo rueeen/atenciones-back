@@ -137,8 +137,7 @@ def load_subcategories(request):
     if category_id and request.user.is_authenticated:
         try:
             category = CaseCategory.objects.get(pk=category_id)
-            if is_category_allowed_for_user(request.user, category):
-                subcategories = CaseSubcategory.objects.filter(category=category).order_by('name')
+            subcategories = CaseSubcategory.objects.filter(category=category).order_by('name')
         except (CaseCategory.DoesNotExist, ValueError, TypeError):
             subcategories = CaseSubcategory.objects.none()
 

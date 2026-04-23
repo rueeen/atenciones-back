@@ -5,7 +5,7 @@ from django.urls import reverse
 from accounts.models import UserProfile
 from accounts.services import visible_cases_for
 from cases.forms import CaseTransferForm
-from cases.models import Case, CaseCategory, CaseHistory, CaseTransfer
+from cases.models import Case, CaseCategory, CaseHistory, CaseSubcategory, CaseTransfer
 from organization.models import AcademicArea, Area, Career
 from students.models import Student
 
@@ -206,3 +206,18 @@ class CaseCreationPermissionTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Escoja una opción válida. Esa opción no está entre las disponibles.')
         self.assertFalse(Case.objects.filter(title='Caso inválido').exists())
+
+    def test_ajax_subcategories_load_for_editing(self):
+        subcategory = CaseSubcategory.objects.create(category=self.category_practica, name='Práctica dual')
+        self.client.login(username='becas_user', password='test123')
+
+        response = self.client.get(
+            reverse('cases:ajax_load_subcategories'),
+            data={'category_id': self.category_practica.pk},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(
+            response.content,
+            [{'id': subcategory.id, 'name': subcategory.name}],
+        )
