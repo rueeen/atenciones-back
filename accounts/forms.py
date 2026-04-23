@@ -21,19 +21,16 @@ class UserCreateForm(forms.ModelForm):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['area', 'role', 'academic_area', 'careers']
+        fields = ['area', 'role', 'careers']
         labels = {
             'area': 'Área',
             'role': 'Cargo',
-            'academic_area': 'Área académica',
             'careers': 'Carreras',
         }
 
     def clean(self):
         cleaned_data = super().clean()
         role = cleaned_data.get('role')
-        area = cleaned_data.get('area')
-        academic_area = cleaned_data.get('academic_area')
         careers = cleaned_data.get('careers')
 
         academic_roles = {
@@ -43,15 +40,8 @@ class UserProfileForm(forms.ModelForm):
             UserProfile.Role.CURRICULAR_ASSISTANT,
         }
 
-        if academic_area and area and academic_area.area_id != area.id:
-            self.add_error('academic_area', 'El área académica no pertenece al área general seleccionada.')
-
         if role not in academic_roles:
-            if academic_area:
-                self.add_error('academic_area', 'Este cargo no debe tener área académica.')
             if careers:
                 self.add_error('careers', 'Este cargo no debe tener carreras asociadas.')
-        elif careers and academic_area and careers.exclude(academic_area=academic_area).exists():
-            self.add_error('careers', 'Todas las carreras deben pertenecer al área académica seleccionada.')
 
         return cleaned_data

@@ -79,8 +79,6 @@ def visible_cases_for(user):
         career_ids = list(profile.careers.values_list('id', flat=True))
         if career_ids:
             return Case.objects.filter(student__career_id__in=career_ids).distinct()
-        if profile.academic_area_id:
-            return Case.objects.filter(student__career__academic_area=profile.academic_area).distinct()
         return Case.objects.none()
 
     if profile.role in CASE_CREATOR_ROLES:

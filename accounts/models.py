@@ -63,17 +63,8 @@ class UserProfile(models.Model):
     def clean(self):
         errors = {}
 
-        if self.academic_area and self.academic_area.area_id != self.area_id:
-            errors['academic_area'] = 'El área académica debe pertenecer al área general seleccionada.'
-
-        if not self.is_academic_role and self.academic_area_id:
-            errors['academic_area'] = 'Solo los cargos académicos pueden tener área académica.'
-
         if self.pk and not self.is_academic_role and self.careers.exists():
             errors['careers'] = 'Solo los cargos académicos pueden tener carreras asociadas.'
-
-        if self.pk and self.academic_area_id and self.careers.exclude(academic_area_id=self.academic_area_id).exists():
-            errors['careers'] = 'Todas las carreras deben pertenecer al área académica seleccionada.'
 
         if errors:
             raise ValidationError(errors)
