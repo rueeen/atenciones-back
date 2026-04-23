@@ -20,11 +20,9 @@ class UserProfileFormValidationTest(TestCase):
         form = UserProfileForm(data={
             'area': self.daf.id,
             'role': UserProfile.Role.TECHNICAL_OPERATOR,
-            'academic_area': self.academic_area.id,
             'careers': [self.career.id],
         })
         self.assertFalse(form.is_valid())
-        self.assertIn('academic_area', form.errors)
         self.assertIn('careers', form.errors)
 
 
@@ -45,7 +43,6 @@ class AcademicVisibilityRulesTest(TestCase):
         profile = self.user.profile
         profile.role = UserProfile.Role.DC
         profile.area = self.dac
-        profile.academic_area = self.academic_area
         profile.save()
         profile.careers.set([self.career_1, self.career_2])
 
