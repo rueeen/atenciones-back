@@ -38,7 +38,16 @@ def get_allowed_categories_for_user(user):
         return CaseCategory.objects.none()
 
     category_names = DEFAULT_ROLE_CATEGORY_MAP.get(role, set())
-    return CaseCategory.objects.filter(name__in=category_names).order_by('name')
+    if not category_names:
+        return CaseCategory.objects.all().order_by('name')
+
+    categories = CaseCategory.objects.filter(name__in=category_names).order_by('name')
+    if categories.exists():
+        return categories
+
+    # Fallback defensivo: si los nombres definidos no coinciden con BD (p. ej. carga
+    # inicial distinta por ambiente), evitamos dejar el selector vacío.
+    return CaseCategory.objects.all().order_by('name')
 
 
 def is_category_allowed_for_user(user, category):
