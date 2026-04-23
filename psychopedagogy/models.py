@@ -4,6 +4,7 @@ import uuid
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 from students.models import Student
@@ -52,10 +53,47 @@ class PsychopedagogyRecord(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student'],
+                condition=Q(status='active'),
+                name='unique_active_psychopedagogy_record_per_student',
+            )
+        ]
         permissions = [
             ('access_psychopedagogy_module', 'Puede acceder al módulo psicopedagógico'),
             ('view_all_psychopedagogy_records', 'Puede ver todas las fichas psicopedagógicas'),
         ]
+
+    def clean(self):
+        super().clean()
+
+        if self.status == self.Status.CLOSED and not self.end_date:
+            raise ValidationError(
+                {'end_date': 'Debe indicar una fecha de cierre cuando la ficha esté cerrada.'}
+            )
+
+        if self.end_date and self.end_date < self.start_date:
+            raise ValidationError(
+                {'end_date': 'La fecha de cierre no puede ser anterior a la fecha de inicio.'}
+            )
+
+        if self.status == self.Status.ACTIVE:
+            qs = PsychopedagogyRecord.objects.filter(
+                student=self.student,
+                status=self.Status.ACTIVE,
+            )
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                raise ValidationError(
+                    {
+                        'student': (
+                            'El estudiante ya tiene una ficha psicopedagógica activa. '
+                            'Registre los nuevos apoyos en la bitácora de esa ficha.'
+                        )
+                    }
+                )
 
     def __str__(self):
         return f'Ficha #{self.pk} - {self.student}'

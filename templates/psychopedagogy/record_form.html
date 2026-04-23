@@ -7,8 +7,8 @@
     <div class="card-header bg-white border-bottom">
       <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
         <div>
-          <h2 class="mb-1">Nueva ficha psicopedagógica</h2>
-          <p class="text-muted mb-0">Registra el inicio de acompañamiento especializado.</p>
+          <h2 class="mb-1">Nueva ficha psicopedagógica por estudiante</h2>
+          <p class="text-muted mb-0">La ficha representa el expediente del alumno; los seguimientos se agregan en bitácora.</p>
         </div>
         <a href="{% url 'psychopedagogy:list' %}" class="btn btn-soft">Volver al listado</a>
       </div>
@@ -73,6 +73,9 @@
           <div class="col-lg-4">
             <div class="border rounded-3 p-3">
               <h5 class="mb-3">Estudiante</h5>
+              <div class="alert alert-info py-2 small">
+                Solo se permite <strong>una ficha activa por estudiante</strong>. Si ya existe, continúe el proceso desde su bitácora.
+              </div>
 
               {{ form.student }}
               {% if form.student.errors %}

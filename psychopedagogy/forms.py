@@ -89,6 +89,23 @@ class PsychopedagogyRecordForm(forms.ModelForm):
         if user:
             self.fields['responsible_tutor'].queryset = User.objects.filter(is_active=True).order_by('first_name', 'last_name', 'username')
 
+    def clean(self):
+        cleaned_data = super().clean()
+        student = cleaned_data.get('student')
+        status = cleaned_data.get('status')
+
+        if student and status == PsychopedagogyRecord.Status.ACTIVE:
+            duplicate_exists = PsychopedagogyRecord.objects.filter(
+                student=student,
+                status=PsychopedagogyRecord.Status.ACTIVE,
+            ).exclude(pk=self.instance.pk).exists()
+            if duplicate_exists:
+                self.add_error(
+                    'student',
+                    'Ya existe una ficha activa para este estudiante. Use la bitácora de esa ficha.',
+                )
+        return cleaned_data
+
 
 class PsychopedagogyLogEntryForm(forms.ModelForm):
     class Meta:
