@@ -3,9 +3,9 @@
 <div class="page-header d-flex flex-wrap justify-content-between align-items-center gap-3">
   <div>
     <h2>Acompañamiento psicopedagógico</h2>
-    <p class="page-subtitle">Fichas sensibles con trazabilidad y acceso restringido.</p>
+    <p class="page-subtitle">Un expediente por estudiante con bitácora continua y acceso restringido.</p>
   </div>
-  <a class="btn btn-main" href="{% url 'psychopedagogy:create' %}"><i class="bi bi-plus-lg me-1"></i>Nueva ficha</a>
+  <a class="btn btn-main" href="{% url 'psychopedagogy:create' %}"><i class="bi bi-plus-lg me-1"></i>Nueva ficha por alumno</a>
 </div>
 
 <div class="card">
@@ -17,6 +17,8 @@
         <th>Tutora responsable</th>
         <th>Estado</th>
         <th>Inicio</th>
+        <th>Último seguimiento</th>
+        <th>Entradas bitácora</th>
         <th>Confidencial</th>
         <th></th>
       </tr>
@@ -28,11 +30,13 @@
         <td>{{ record.responsible_tutor.get_full_name|default:record.responsible_tutor.username }}</td>
         <td><span class="badge bg-status">{{ record.get_status_display }}</span></td>
         <td>{{ record.start_date }}</td>
+        <td>{{ record.last_log_date|default:'Sin registros' }}</td>
+        <td>{{ record.log_entries_count }}</td>
         <td>{% if record.is_confidential %}Sí{% else %}No{% endif %}</td>
         <td><a class="btn btn-sm btn-soft" href="{% url 'psychopedagogy:detail' record.pk %}"><i class="bi bi-eye me-1"></i>Ver</a></td>
       </tr>
       {% empty %}
-      <tr><td colspan="6" class="text-center text-muted py-4">No hay fichas disponibles para su usuario.</td></tr>
+      <tr><td colspan="8" class="text-center text-muted py-4">No hay fichas disponibles para su usuario.</td></tr>
       {% endfor %}
       </tbody>
     </table>

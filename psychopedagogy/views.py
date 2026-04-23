@@ -1,5 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import IntegrityError
+from django.db.models import Count, Max
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
@@ -34,6 +36,9 @@ class PsychopedagogyRecordListView(PsychopedagogyModuleAccessMixin, ListView):
     def get_queryset(self):
         return visible_psychopedagogy_records_for(self.request.user).select_related(
             'student', 'responsible_tutor', 'created_by'
+        ).annotate(
+            log_entries_count=Count('log_entries', distinct=True),
+            last_log_date=Max('log_entries__entry_date'),
         )
 
 
@@ -67,9 +72,17 @@ class PsychopedagogyRecordCreateView(PsychopedagogyModuleAccessMixin, CreateView
 
     def form_valid(self, form):
         form.instance.created_by = self.request.user
+        try:
+            response = super().form_valid(form)
+        except IntegrityError:
+            form.add_error(
+                'student',
+                'Ya existe una ficha psicopedagógica activa para este estudiante.',
+            )
+            return self.form_invalid(form)
         messages.success(
             self.request, 'Ficha psicopedagógica creada correctamente.')
-        return super().form_valid(form)
+        return response
 
 
 class PsychopedagogyLogEntryCreateView(PsychopedagogyModuleAccessMixin, View):
