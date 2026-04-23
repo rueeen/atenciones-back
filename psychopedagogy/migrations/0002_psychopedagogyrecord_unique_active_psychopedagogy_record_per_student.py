@@ -4,6 +4,28 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def deduplicate_active_records(apps, schema_editor):
+    PsychopedagogyRecord = apps.get_model("psychopedagogy", "PsychopedagogyRecord")
+
+    duplicated_students = (
+        PsychopedagogyRecord.objects.filter(status="active")
+        .values_list("student_id", flat=True)
+        .annotate(active_count=models.Count("id"))
+        .filter(active_count__gt=1)
+    )
+
+    for student_id in duplicated_students:
+        duplicated_records = list(
+            PsychopedagogyRecord.objects.filter(student_id=student_id, status="active")
+            .order_by("-created_at", "-id")
+        )
+        records_to_pause = duplicated_records[1:]
+        if records_to_pause:
+            PsychopedagogyRecord.objects.filter(
+                id__in=[record.id for record in records_to_pause]
+            ).update(status="on_hold")
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -13,6 +35,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(deduplicate_active_records, migrations.RunPython.noop),
         migrations.AddConstraint(
             model_name="psychopedagogyrecord",
             constraint=models.UniqueConstraint(
