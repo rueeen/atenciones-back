@@ -33,6 +33,15 @@
     </a>
     {% endif %}
 
+
+    <a href="{% url 'notifications:list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'notifications' %}active{% endif %}">
+      <i class="bi bi-bell"></i>
+      <span>Notificaciones</span>
+      {% if unread_notifications_count %}
+      <span class="badge rounded-pill text-bg-danger ms-auto">{{ unread_notifications_count }}</span>
+      {% endif %}
+    </a>
+
     <a href="{% url 'students:list' %}" class="sidebar-link {% if request.resolver_match.namespace == 'students' %}active{% endif %}">
       <i class="bi bi-mortarboard"></i>
       <span>Estudiantes</span>
