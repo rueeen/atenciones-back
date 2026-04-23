@@ -5,12 +5,20 @@ from django.db import models
 
 class UserProfile(models.Model):
     class Role(models.TextChoices):
-        ADMIN = 'admin', 'Administrador general'
-        SUPERVISOR = 'supervisor', 'Supervisor de área'
-        STAFF = 'staff', 'Funcionario'
-        CAREER_DIRECTOR = 'career_director', 'Director de carrera'
-        CAREER_COORDINATOR = 'career_coordinator', 'Coordinador de carrera'
-        READ_ONLY = 'read_only', 'Solo lectura'
+        VRS = 'vrs', 'Vicerrector sede (VRS)'
+        DAC = 'dac', 'Director académico (DAC)'
+        DC = 'dc', 'Director de carrera (DC)'
+        CC = 'cc', 'Coordinador de carrera (CC)'
+        DAE = 'dae', 'Director asuntos estudiantiles (DAE)'
+        SCHOLARSHIP_MANAGER = 'scholarship_manager', 'Encargado becas'
+        EMPLOYABILITY_MANAGER = 'employability_manager', 'Encargado empleabilidad'
+        CURRICULAR_HEAD = 'curricular_head', 'Jefe curricular'
+        CURRICULAR_ASSISTANT = 'curricular_assistant', 'Asistente curricular'
+        LOCAL_NETWORK_ADMIN = 'local_network_admin', 'Administrador de red local'
+        TECHNICAL_OPERATOR = 'technical_operator', 'Operador técnico'
+        SUBDIRECTOR = 'subdirector', 'Subdirector'
+        TUTOR = 'tutor', 'Tutora'
+        HEAD_TUTOR = 'head_tutor', 'Jefa tutora'
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -37,7 +45,7 @@ class UserProfile(models.Model):
     role = models.CharField(
         max_length=30,
         choices=Role.choices,
-        default=Role.STAFF
+        default=Role.TECHNICAL_OPERATOR
     )
 
     def __str__(self):
@@ -46,8 +54,10 @@ class UserProfile(models.Model):
     @property
     def is_academic_role(self):
         return self.role in {
-            self.Role.CAREER_DIRECTOR,
-            self.Role.CAREER_COORDINATOR,
+            self.Role.DC,
+            self.Role.CC,
+            self.Role.CURRICULAR_HEAD,
+            self.Role.CURRICULAR_ASSISTANT,
         }
 
     def clean(self):
@@ -57,10 +67,10 @@ class UserProfile(models.Model):
             errors['academic_area'] = 'El área académica debe pertenecer al área general seleccionada.'
 
         if not self.is_academic_role and self.academic_area_id:
-            errors['academic_area'] = 'Solo los roles académicos pueden tener área académica.'
+            errors['academic_area'] = 'Solo los cargos académicos pueden tener área académica.'
 
         if self.pk and not self.is_academic_role and self.careers.exists():
-            errors['careers'] = 'Solo los roles académicos pueden tener carreras asociadas.'
+            errors['careers'] = 'Solo los cargos académicos pueden tener carreras asociadas.'
 
         if self.pk and self.academic_area_id and self.careers.exclude(academic_area_id=self.academic_area_id).exists():
             errors['careers'] = 'Todas las carreras deben pertenecer al área académica seleccionada.'

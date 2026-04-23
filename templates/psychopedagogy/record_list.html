@@ -5,7 +5,9 @@
     <h2>Acompañamiento psicopedagógico</h2>
     <p class="page-subtitle">Un expediente por estudiante con bitácora continua y acceso restringido.</p>
   </div>
+  {% if can_create_inclusion_log %}
   <a class="btn btn-main" href="{% url 'psychopedagogy:create' %}"><i class="bi bi-plus-lg me-1"></i>Nueva ficha por alumno</a>
+  {% endif %}
 </div>
 
 <div class="card">

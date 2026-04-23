@@ -51,7 +51,7 @@ class Command(BaseCommand):
             admin.is_staff = True
             admin.save()
         admin.profile.area = dir_acad
-        admin.profile.role = UserProfile.Role.ADMIN
+        admin.profile.role = UserProfile.Role.VRS
         admin.profile.save()
 
         sup, created = User.objects.get_or_create(username='supervisor_dae', defaults={'first_name': 'Supervisor', 'last_name': 'DAE'})
@@ -59,7 +59,7 @@ class Command(BaseCommand):
             sup.set_password('supervisor1234')
             sup.save()
         sup.profile.area = dae
-        sup.profile.role = UserProfile.Role.SUPERVISOR
+        sup.profile.role = UserProfile.Role.DAE
         sup.profile.save()
 
         self.stdout.write(self.style.SUCCESS('Datos iniciales cargados correctamente.'))

@@ -3,23 +3,38 @@ from django.db.models import Q
 from accounts.models import UserProfile
 from psychopedagogy.models import PsychopedagogyRecord
 
-
-ALLOWED_ROLE_ACCESS = {
-    UserProfile.Role.ADMIN,
-    UserProfile.Role.SUPERVISOR,
-    UserProfile.Role.STAFF,
+ALLOWED_MODULE_ROLES = {
+    UserProfile.Role.TUTOR,
+    UserProfile.Role.HEAD_TUTOR,
+    UserProfile.Role.DAE,
+    UserProfile.Role.SUBDIRECTOR,
+    UserProfile.Role.DAC,
+    UserProfile.Role.VRS,
 }
 
-
 SUPERVISOR_ROLE_ACCESS = {
-    UserProfile.Role.ADMIN,
-    UserProfile.Role.SUPERVISOR,
+    UserProfile.Role.HEAD_TUTOR,
+    UserProfile.Role.DAE,
+    UserProfile.Role.SUBDIRECTOR,
+    UserProfile.Role.DAC,
+    UserProfile.Role.VRS,
 }
 
 
 def _user_role(user):
     profile = getattr(user, 'profile', None)
     return getattr(profile, 'role', None)
+
+
+def user_can_create_inclusion_log(user):
+    # Pendiente funcional: confirmar si Jefa tutora también podrá crear bitácoras.
+    # Política actual aplicada por mínimo privilegio: solo Tutora.
+
+    if not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    return _user_role(user) == UserProfile.Role.TUTOR
 
 
 def can_access_psychopedagogy_module(user):
@@ -29,7 +44,7 @@ def can_access_psychopedagogy_module(user):
         return True
     if user.has_perm('psychopedagogy.access_psychopedagogy_module'):
         return True
-    return _user_role(user) in ALLOWED_ROLE_ACCESS
+    return _user_role(user) in ALLOWED_MODULE_ROLES
 
 
 def can_view_all_psychopedagogy_records(user):

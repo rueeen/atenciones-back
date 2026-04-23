@@ -22,7 +22,7 @@ class CaseModelAndPermissionsTest(TestCase):
         self.category = CaseCategory.objects.create(name='Becas y beneficios')
         self.user = User.objects.create_user('func1', password='test123')
         self.user.profile.area = self.area
-        self.user.profile.role = UserProfile.Role.STAFF
+        self.user.profile.role = UserProfile.Role.TECHNICAL_OPERATOR
         self.user.profile.save()
 
     def test_case_generates_folio(self):
@@ -65,12 +65,12 @@ class CaseTransferFlowTest(TestCase):
 
         self.staff_origin = User.objects.create_user('staff_origin', password='test123')
         self.staff_origin.profile.area = self.area_origin
-        self.staff_origin.profile.role = UserProfile.Role.STAFF
+        self.staff_origin.profile.role = UserProfile.Role.TECHNICAL_OPERATOR
         self.staff_origin.profile.save()
 
         self.staff_destination = User.objects.create_user('staff_destination', password='test123')
         self.staff_destination.profile.area = self.area_destination
-        self.staff_destination.profile.role = UserProfile.Role.STAFF
+        self.staff_destination.profile.role = UserProfile.Role.TECHNICAL_OPERATOR
         self.staff_destination.profile.save()
 
         self.assignee = User.objects.create_user('responsable', password='test123')
@@ -148,7 +148,7 @@ class CaseTransferFlowTest(TestCase):
     def test_cannot_take_case_from_other_area(self):
         outsider = User.objects.create_user('outsider', password='test123')
         outsider.profile.area = self.area_origin
-        outsider.profile.role = UserProfile.Role.STAFF
+        outsider.profile.role = UserProfile.Role.TECHNICAL_OPERATOR
         outsider.profile.save()
 
         self.case.current_assignee = None
@@ -164,3 +164,45 @@ class CaseTransferFlowTest(TestCase):
         )
         self.case.refresh_from_db()
         self.assertIsNone(self.case.current_assignee)
+
+
+class CaseCreationPermissionTest(TestCase):
+    def setUp(self):
+        self.area = Area.objects.create(name='DAE')
+        self.academic_root = Area.objects.create(name='Dirección Académica')
+        self.academic_area = AcademicArea.objects.create(name='Tecnología', area=self.academic_root)
+        self.career = Career.objects.create(name='Analista Programador', academic_area=self.academic_area)
+        self.student = Student.objects.create(
+            full_name='Luisa Soto', rut='19.222.111-0', email='luisa@example.com', phone='555', career=self.career
+        )
+        self.category_becas = CaseCategory.objects.create(name='Becas y beneficios')
+        self.category_practica = CaseCategory.objects.create(name='Práctica')
+
+        self.user = User.objects.create_user('becas_user', password='test123')
+        self.user.profile.area = self.area
+        self.user.profile.role = UserProfile.Role.SCHOLARSHIP_MANAGER
+        self.user.profile.save()
+
+    def test_case_form_limits_categories_by_role(self):
+        self.client.login(username='becas_user', password='test123')
+        response = self.client.get(reverse('cases:create'))
+        self.assertEqual(response.status_code, 200)
+        available_ids = list(response.context['form'].fields['category'].queryset.values_list('id', flat=True))
+        self.assertIn(self.category_becas.id, available_ids)
+        self.assertNotIn(self.category_practica.id, available_ids)
+
+    def test_rejects_manual_post_with_forbidden_category(self):
+        self.client.login(username='becas_user', password='test123')
+        response = self.client.post(
+            reverse('cases:create'),
+            data={
+                'title': 'Caso inválido',
+                'description': 'Intento con categoría no permitida',
+                'category': self.category_practica.pk,
+                'student': self.student.pk,
+                'priority': Case.Priority.MEDIUM,
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Escoja una opción válida. Esa opción no está entre las disponibles.')
+        self.assertFalse(Case.objects.filter(title='Caso inválido').exists())

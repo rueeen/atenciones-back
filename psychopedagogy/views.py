@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError
 from django.db.models import Count, Max
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
@@ -16,6 +17,7 @@ from psychopedagogy.models import PsychopedagogyAttachment, PsychopedagogyLogEnt
 from psychopedagogy.services import (
     can_access_psychopedagogy_module,
     can_edit_psychopedagogy_record,
+    user_can_create_inclusion_log,
     visible_psychopedagogy_records_for,
 )
 
@@ -26,6 +28,15 @@ class PsychopedagogyModuleAccessMixin(LoginRequiredMixin):
             messages.error(
                 request, 'No tiene permisos para acceder al módulo psicopedagógico.')
             return redirect('dashboard:home')
+        return super().dispatch(request, *args, **kwargs)
+
+
+
+
+class InclusionLogCreatePermissionMixin:
+    def dispatch(self, request, *args, **kwargs):
+        if not user_can_create_inclusion_log(request.user):
+            raise PermissionDenied('Solo las tutoras pueden crear bitácoras de inclusión.')
         return super().dispatch(request, *args, **kwargs)
 
 
@@ -41,6 +52,11 @@ class PsychopedagogyRecordListView(PsychopedagogyModuleAccessMixin, ListView):
             last_log_date=Max('log_entries__entry_date'),
         )
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['can_create_inclusion_log'] = user_can_create_inclusion_log(self.request.user)
+        return context
+
 
 class PsychopedagogyRecordDetailView(PsychopedagogyModuleAccessMixin, DetailView):
     template_name = 'psychopedagogy/record_detail.html'
@@ -55,12 +71,12 @@ class PsychopedagogyRecordDetailView(PsychopedagogyModuleAccessMixin, DetailView
         context = super().get_context_data(**kwargs)
         context['log_form'] = PsychopedagogyLogEntryForm()
         context['attachment_form'] = PsychopedagogyAttachmentForm()
-        context['can_edit_record'] = can_edit_psychopedagogy_record(
-            self.request.user, self.object)
+        context['can_edit_record'] = can_edit_psychopedagogy_record(self.request.user, self.object)
+        context['can_create_inclusion_log'] = user_can_create_inclusion_log(self.request.user)
         return context
 
 
-class PsychopedagogyRecordCreateView(PsychopedagogyModuleAccessMixin, CreateView):
+class PsychopedagogyRecordCreateView(InclusionLogCreatePermissionMixin, PsychopedagogyModuleAccessMixin, CreateView):
     form_class = PsychopedagogyRecordForm
     template_name = 'psychopedagogy/record_form.html'
     success_url = reverse_lazy('psychopedagogy:list')
@@ -85,7 +101,7 @@ class PsychopedagogyRecordCreateView(PsychopedagogyModuleAccessMixin, CreateView
         return response
 
 
-class PsychopedagogyLogEntryCreateView(PsychopedagogyModuleAccessMixin, View):
+class PsychopedagogyLogEntryCreateView(InclusionLogCreatePermissionMixin, PsychopedagogyModuleAccessMixin, View):
     def post(self, request, pk):
         record = get_object_or_404(
             visible_psychopedagogy_records_for(request.user), pk=pk)

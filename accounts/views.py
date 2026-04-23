@@ -9,7 +9,7 @@ from accounts.forms import UserCreateForm, UserProfileForm
 
 class AdminOnlyMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.is_superuser or getattr(self.request.user.profile, 'role', '') == 'admin'
+        return self.request.user.is_superuser or getattr(self.request.user.profile, 'role', '') in {'vrs', 'dac'}
 
 
 class UserCreateView(LoginRequiredMixin, AdminOnlyMixin, View):
